@@ -1,4 +1,4 @@
-Keystone-LDAP Configuration Tool (v0.0.1)
+Keystone-LDAP Configuration Tool - v0.0.1
 
 1 Ping LDAP server IP
 url
@@ -41,3 +41,5 @@ The user can save the configuration at any point and continue the rest of steps.
 15 Log
 Log all the input and output messages during the tool run.
 The professional service or customer can send us this log file for debug, if any issue encountered.
+
+
