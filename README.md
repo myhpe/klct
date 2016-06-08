@@ -11,25 +11,25 @@ This checks the connection to the LDAP server by ip/hostname and port number.
 url, user, password, tls
 The user account should be the one to be used by keystone-ldap operations.
 
-4 Get sever information	 
+4 Get sever information
 
 5 Check LDAP suffix	such as dc=openstack, dc=org
 
-6 Show a list of user related object classes	 
+6 Show a list of user related object classes
 
 7 Check user tree dn and show a list of users 
 Show a list of users by limit (default to 3); allow user to input limit
 
-8 Get a specific user	 
+8 Get a specific user
 
 9 Show a list of group related object classes 
 
 10 Check group tree dn and show a list of groups	
 Show a list of groups by limit (default to 3); allow user to input limit
 
-11 Get a specific group	 
+11 Get a specific group
 
-12 Add additional configuration options	 
+12 Add additional configuration options
 
 13 Show configuration
 Show all the configuration options up to this point.
