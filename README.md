@@ -1,4 +1,4 @@
-Keystone-LDAP Configuration Tool
+Keystone-LDAP Configuration Tool (v0.0.1)
 
 1 Ping LDAP server IP
 url
