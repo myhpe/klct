@@ -13,6 +13,7 @@ class TestConfigTool(unittest.TestCase):
     password = "temppassword"
     bad_user_name = "not a user"
     bad_password = "wrong password"
+    bad_port = "invalid_port"
 
     """pingLDAPserver() tests"""
     def test_ping_invalid_host_name(self):
@@ -35,32 +36,31 @@ class TestConfigTool(unittest.TestCase):
 
     """connectLDAPserver() tests"""
     def test_connect_invalid_host_name(self):
-        self.assertEqal(configTool.connect_LDAP_server(self.invalid_host_name, self.user_name, self.password), "Failed to connect due to invalid socket.")
+        self.assertEqual(configTool.connect_LDAP_server(self.invalid_host_name, None, "", "")[0], "Failed to connect due to invalid socket.")
 
     def test_connect_bad_host_name(self):
-        self.assertEqual(configTool.connect_LDAP_server(self.bad_host_name, self.user_name, self.password), "Failed to connect due to invalid socket.")
+        self.assertEqual(configTool.connect_LDAP_server(self.bad_host_name, None, "", "")[0], "Failed to connect due to invalid socket.")
 
     def test_connect_bad_host(self):
-        self.assertEqual(configTool.connect_LDAP_server(self.bad_host, self.user_name, self.password), "Failed to connect due to invalid socket.")
+        self.assertEqual(configTool.connect_LDAP_server(self.bad_host, None, "", "")[0], "Failed to connect due to invalid socket.")
 
     def test_connect_no_network(self):
         #this test should fail because it tests the local host
         call(["sudo", "ip", "link", "set", "dev", "eth0", "down"])
-        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, self.user_name, self.password), "Failed to connect due to invalid socket.")
+        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, None, "", "")[0], "Failed to connect due to invalid socket.")
         call(["sudo", "ip", "link", "set", "dev", "eth0", "up"])
 
-    #def test_connect_bad_port(self):
+    def test_connect_bad_port(self):
+        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, self.bad_port, "", "")[0], "Invalid Port")
 
     def test_connect_good_host_name(self):
-        self.assertEqual(configTool.connect_LDAP_server("10.1.56.3", "", ""), "Successfully connected!")
+        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, None, "", "")[0], "Successfully connected!")
 
     def test_bad_username(self):
-        print("testing bad username")
-        self.assertEqual(configTool.connect_LDAP_server("10.1.56.3", self.bad_user_name, self.password), "Invalid log in info")
+        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, None, self.bad_user_name, self.password)[0], "Invalid log in info")
 
     def test_bad_password(self):
-        print("testing bad password")
-        configTool.connect_LDAP_server(self.good_host_name, self.user_name, self.bad_password)
+        self.assertEqual(configTool.connect_LDAP_server(self.good_host_name, None, self.user_name, self.bad_password)[0], "Invalid log in info")
 
 if __name__ == '__main__':
     unittest.main()
