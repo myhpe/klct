@@ -32,12 +32,8 @@ def ping_LDAP_server(host_name):
             subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
             response = 0
         except subprocess.CalledProcessError:
-            response = None
-    if response == 0:
-        return "Successfully pinged " + host_name
-    else:
-        return "Unsuccessfully pinged " + host_name
-
+            response = 1
+    return response
 
 def connect_LDAP_server(host_name, port_number, user_name, password):
     """Attempts to connect to the provided hostName, using the provided user name and pass.
