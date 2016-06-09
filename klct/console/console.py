@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 import curses
+import locale
 import sys
 sys.path.insert(0, '../ldap')
 import configTool
 
+
+locale.setlocale(locale.LC_ALL,"")
 term_screen = curses.initscr()  # terminal screen
 term_screen_dimensions = term_screen.getmaxyx()
 term_screen.keypad(True)
@@ -19,7 +23,20 @@ curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
-check_list = [0] * 12
+check_list = ['☐'] * 12
+menu_options = ["Ping LDAP Server IP",
+                "Check Connection to LDAP Server",
+                "Get Server Information",
+                "Check LDAP Suffix",
+                "Show List of User-Related ObjectClasses",
+                "Check User Tree DN and Show List of Users",
+                "Get a Specific User",
+                "Show List of Group Related ObjectClasses",
+                "Check Group Tree DN and Show List of Groups",
+                "Get Specific Group",
+                "Add Additional Configuration Options",
+                "Show Configuration",
+                "Save/Create Configuration File"]
 
 
 def show_instructions(screen):
@@ -48,6 +65,7 @@ def menu_ping_ldap_ip(screen):
         screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(success)/2, success)
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
+        menu_options[0] = u"Ping LDAP Server IP ✓"
     else:
         screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail)
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 18,
@@ -80,19 +98,6 @@ def display_menu(screen):
     screen.nodelay(0)
     screen.clear()
     menu_selection = -1
-    menu_options = ["Ping LDAP Server IP",
-                    "Check Connection to LDAP Server",
-                    "Get Server Information",
-                    "Check LDAP Suffix",
-                    "Show List of User-Related ObjectClasses",
-                    "Check User Tree DN and Show List of Users",
-                    "Get a Specific User",
-                    "Show List of Group Related ObjectClasses",
-                    "Check Group Tree DN and Show List of Groups",
-                    "Get Specific Group",
-                    "Add Additional Configuration Options",
-                    "Show Configuration",
-                    "Save/Create Configuration File"]
     option_num = 0
     while menu_selection < 0:
         menu_highlighting = [0] * 13
@@ -100,7 +105,7 @@ def display_menu(screen):
         screen.addstr(0, screen_half_x - 11,
                       "LDAP Configuration Menu",curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
         screen.addstr(screen_half_y - 6, screen_half_x - len(menu_options[0])/2,
-                      menu_options[0], menu_highlighting[0] | curses.color_pair(2))
+                      (menu_options[0]).encode("utf-8"), menu_highlighting[0] | curses.color_pair(2))
         screen.addstr(screen_half_y - 5, screen_half_x - len(menu_options[1])/2,
                       menu_options[1], menu_highlighting[1] | curses.color_pair(2))
         screen.addstr(screen_half_y - 4, screen_half_x - len(menu_options[2])/2,
