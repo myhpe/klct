@@ -26,9 +26,13 @@ def ping_LDAP_server(host_name):
     is_valid = check_valid_IP(host_name)
     if not is_valid:
         return "Invalid Hostname Format"
-    #response = os.system("ping -c 1 -q " + host_name)
-    with open(os.devnull, "wb") as devnull:
-        response = subprocess.check_call(["ping", "-c", "1", host_name], stdout=devnull, stderr=subprocess.STDOUT)
+    response = None
+    with open(os.devnull, "w") as DEVNULL:
+        try:
+            subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
+            response = 0
+        except subprocess.CalledProcessError:
+            response = None
     if response == 0:
         return "Successfully pinged " + host_name
     else:
