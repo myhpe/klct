@@ -1,4 +1,5 @@
 import os
+import subprocess
 import socket
 import sys
 import ldap3
@@ -25,7 +26,9 @@ def ping_LDAP_server(host_name):
     is_valid = check_valid_IP(host_name)
     if not is_valid:
         return "Invalid Hostname Format"
-    response = os.system("ping -c 1 " + host_name)
+    #response = os.system("ping -c 1 -q " + host_name)
+    with open(os.devnull, "wb") as devnull:
+        response = subprocess.check_call(["ping", "-c", "1", host_name], stdout=devnull, stderr=subprocess.STDOUT)
     if response == 0:
         return "Successfully pinged " + host_name
     else:
@@ -38,9 +41,11 @@ def connect_LDAP_server(host_name, port_number, user_name, password):
     Return an exception indicating what went wrong (returns None on success).
     """
     try:
-        server = Server(host_name, port=port_number, get_info=ALL, use_ssl=True)
+        tl = Tls(local_private_key_file = 'client_private_key.pem', local_certificate_file = 'client_cert.pem', validate = ssl.CERT_REQUIRED, version = ssl.PROTOCOL_TLSv1, ca_certs_file = 'ca_cert.b64')
+        server = Server(host_name, port=port_number, tls=tl, use_ssl=True, get_info=ALL)
         print("\nTrying to connect...")
         conn = Connection(server, user=user_name, password=password)
+        conn.start_tls()
         if not conn.bind():
             return"bind failed", conn.results
         else:
@@ -48,13 +53,15 @@ def connect_LDAP_server(host_name, port_number, user_name, password):
             return "Successfully connected!", None
     except ldap3.LDAPSocketOpenError as err:
         return "Failed to connect due to invalid socket.", err
+    except ldap3.LDAPInvalidPortError as err:
+        return "Invalid Port", err
     except AttributeError as err:
         return "Invalid log in info", err
     except ldap3.LDAPPasswordIsMandatoryError as err:
-        return "Please enter a password.", err
+        return "Please enter a password", err
     except:
-        return "Failed to connect due to unknown reasons.", sys.exc_info()[0]
+        return "Failed to connect due to unknown reasons", sys.exc_info()[0]
 
-def retrieve_server_info(host_name, user_name, password):
-    print("temp")
+#def retrieve_server_info(host_name, user_name, password):
 #ad vs. openldap, version, etc
+
