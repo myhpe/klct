@@ -3,11 +3,11 @@ import sys
 sys.path.insert(0, '../ldap')
 import configTool
 
-term_screen = curses.initscr() # terminal screen
+term_screen = curses.initscr()  # terminal screen
 term_screen_dimensions = term_screen.getmaxyx()
 term_screen.keypad(True)
 curses.noecho()
-start_instruction = "Needs to be implemented. Press any key to go to the menu"
+start_instruction = "LDAP Configuration Tool. Press 'm' to go to the menu."
 
 if curses.has_colors():
     curses.start_color()
@@ -24,28 +24,48 @@ def show_instructions(screen):
     curses.curs_set(0)
     screen_dimensions = screen.getmaxyx()
     screen.clear()
+    char_press = 0
     screen.addstr(screen_dimensions[0]/2,
                   screen_dimensions[1]/2 - len(start_instruction)/2, start_instruction)
-    screen.getch()
+    while char_press != ord('m'):
+        char_press = screen.getch()
     display_menu(screen)
+
 
 
 def menu_ping_ldap_ip(screen):
+    success = "Successfully pinged IP address."
+    fail = "Unsuccessfully pinged IP address."
     screen.clear()
+    tempchar = 0
     screen_dims = screen.getmaxyx()
     ip_string = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 23, "Please Enter the IP Address of the LDAP server.")
-    temp_string = configTool.ping_LDAP_server(ip_string)
-    screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(temp_string)/2, temp_string)
-    screen.getch()
-    display_menu(screen)
+    temp_bool = configTool.ping_LDAP_server(ip_string)  # change to boolean value
 
+    if temp_bool == 0:
+        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(success)/2, success)
+        screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 25, "Press 'n' to move on to next step, or 'm' for menu.")
+    else:
+        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail)
+        screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 18, "Press 'r' to retry, or 'm' for menu.")
+
+
+    while tempchar not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
+        tempchar = screen.getch()
+    if tempchar == 109:
+        display_menu(screen)
+    elif tempchar == 110:
+        print("TEMP, MOVE ON TO NEXT METHOD CALL")
+    elif tempchar == 114:
+        menu_ping_ldap_ip(screen)
 
 
 def my_raw_input(screen, y, x, prompt_string):
     curses.echo()
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x, 20)
+    str_input = screen.getstr(y + 1, x + 1, 20)
     curses.noecho()
     return str_input
 
