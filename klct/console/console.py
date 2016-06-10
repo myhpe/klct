@@ -24,7 +24,7 @@ curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
-check_list = ['☐'] * 12
+menu_color = [curses.color_pair(2)] * 12
 menu_options = ["Ping LDAP Server IP",
                 "Check Connection to LDAP Server",
                 "Get Server Information",
@@ -69,6 +69,7 @@ def menu_ping_ldap_ip(screen):
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"Ping LDAP Server IP ✓"
+        menu_color[0] = curses.color_pair(6)
     else:
         screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail, curses.color_pair(3))
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 18,
@@ -108,29 +109,29 @@ def display_menu(screen):
         screen.addstr(0, screen_half_x - 11,
                       "LDAP Configuration Menu",curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
         screen.addstr(screen_half_y - 6, screen_half_x - len(menu_options[0])/2,
-                      (menu_options[0]).encode("utf-8"), menu_highlighting[0] | curses.color_pair(2))
+                      (menu_options[0]).encode("utf-8"), menu_highlighting[0] | menu_color[0])
         screen.addstr(screen_half_y - 5, screen_half_x - len(menu_options[1])/2,
-                      menu_options[1], menu_highlighting[1] | curses.color_pair(2))
+                      menu_options[1], menu_highlighting[1] | menu_color[1])
         screen.addstr(screen_half_y - 4, screen_half_x - len(menu_options[2])/2,
-                      menu_options[2], menu_highlighting[2] | curses.color_pair(2))
+                      menu_options[2], menu_highlighting[2] | menu_color[2])
         screen.addstr(screen_half_y - 3, screen_half_x - len(menu_options[3])/2,
-                      menu_options[3], menu_highlighting[3] | curses.color_pair(2))
+                      menu_options[3], menu_highlighting[3] | menu_color[3])
         screen.addstr(screen_half_y - 2, screen_half_x - len(menu_options[4])/2,
-                      menu_options[4], menu_highlighting[4] | curses.color_pair(2))
+                      menu_options[4], menu_highlighting[4] | menu_color[4])
         screen.addstr(screen_half_y - 1, screen_half_x - len(menu_options[5])/2,
-                      menu_options[5], menu_highlighting[5] | curses.color_pair(2))
+                      menu_options[5], menu_highlighting[5] | menu_color[5])
         screen.addstr(screen_half_y + 0, screen_half_x - len(menu_options[6])/2,
-                      menu_options[6], menu_highlighting[6] | curses.color_pair(2))
+                      menu_options[6], menu_highlighting[6] | menu_color[6])
         screen.addstr(screen_half_y + 1, screen_half_x - len(menu_options[7])/2,
-                      menu_options[7], menu_highlighting[7] | curses.color_pair(2))
+                      menu_options[7], menu_highlighting[7] | menu_color[7])
         screen.addstr(screen_half_y + 2, screen_half_x - len(menu_options[8])/2,
-                      menu_options[8], menu_highlighting[8] | curses.color_pair(2))
+                      menu_options[8], menu_highlighting[8] | menu_color[8])
         screen.addstr(screen_half_y + 3, screen_half_x - len(menu_options[9])/2,
-                      menu_options[9], menu_highlighting[9] | curses.color_pair(2))
+                      menu_options[9], menu_highlighting[9] | menu_color[9])
         screen.addstr(screen_half_y + 4, screen_half_x - len(menu_options[10])/2,
-                      menu_options[10], menu_highlighting[10] | curses.color_pair(2))
+                      menu_options[10], menu_highlighting[10] | menu_color[10])
         screen.addstr(screen_half_y + 5, screen_half_x - len(menu_options[11])/2,
-                      menu_options[11], menu_highlighting[11] | curses.color_pair(2))
+                      menu_options[11], menu_highlighting[11] | menu_color[11])
         screen.addstr(screen_half_y + 6, screen_half_x - 2, "Exit", menu_highlighting[12] | curses.color_pair(3))
         screen.refresh()
 
