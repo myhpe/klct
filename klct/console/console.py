@@ -6,25 +6,25 @@ sys.path.insert(0, '../ldap')
 import configTool
 
 
-locale.setlocale(locale.LC_ALL,"")
+"""SET UP"""
+locale.setlocale(locale.LC_ALL,"")  # for unicode support
 term_screen = curses.initscr()  # terminal screen
-term_screen_dimensions = term_screen.getmaxyx()
-term_screen.keypad(True)
+term_screen_dimensions = term_screen.getmaxyx()  # returns tuple (y,x) of current screen resolution
+term_screen.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
 curses.noecho()
 start_instruction = "LDAP Configuration Tool. Press 'm' to go to the menu."
-
-if curses.has_colors():
+if curses.has_colors():  # enable coloring
     curses.start_color()
-
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
-curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
+curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
-menu_color = [curses.color_pair(2)] * 12
+"""VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
+menu_color = [curses.color_pair(2)] * 12  # number of menu options = 12
 menu_options = ["Ping LDAP Server IP",
                 "Check Connection to LDAP Server",
                 "Get Server Information",
@@ -38,9 +38,14 @@ menu_options = ["Ping LDAP Server IP",
                 "Add Additional Configuration Options",
                 "Show Configuration",
                 "Save/Create Configuration File"]
+valid_ip_addr = [0]  # string value of IP address, set to false (0) until successful pinging of IP address
+
+
+"""HELPER METHODS"""
 
 
 def show_instructions(screen):
+    """Displays the starting instructions prior to the menu display."""
     curses.curs_set(0)
     screen_dimensions = screen.getmaxyx()
     screen.clear()
@@ -52,50 +57,83 @@ def show_instructions(screen):
     display_menu(screen)
 
 
+def my_raw_input(screen, y, x, prompt_string):
+    """Prompt for input from user. Given a (y, x) coordinate,
+    will show a prompt at (y + 1, x). Currently only able to
+    prompt for 20 chars, but can change later."""
+    curses.echo() # so user can see
+    screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addch(y + 1, x, ">")
+    screen.refresh()
+    str_input = screen.getstr(y + 1, x + 1, 20)  # 20 = max chars to in string
+    # screen.addstr(y + 1, x + 1, str_input)
+    curses.noecho()
+    return str_input
+
+
+"""MAIN METHODS"""
+
+
 def menu_ping_ldap_ip(screen):
+    """Displays a screen prompting user for IP address and then
+    pings that IP address to see if it able to send a response."""
     success = "Successfully pinged given IP address."
     fail = "Unsuccessfully pinged given IP address."
     screen.clear()
     temp_char = 0
     screen_dims = screen.getmaxyx()
 
-    ip_string = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 23,
+    ip_string = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 23,
                              "Please Enter the IP Address of the LDAP server.")
-    screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - 12, "Attempting to ping IP...", curses.color_pair(5) | curses.A_BLINK)
+    screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
+                  curses.color_pair(5) | curses.A_BLINK)
     screen.refresh()
     temp_bool = configTool.ping_LDAP_server(ip_string)
-    if temp_bool == 0:
-        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(success)/2, success, curses.color_pair(6))
-        screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 25,
+    if temp_bool == 1 and ip_string != "":
+        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(success) / 2,
+                      success, curses.color_pair(6))
+        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 26, "This IP will automatically be used in the next step.", curses.color_pair(4))
+        screen.addstr(screen_dims[0] / 2 + 6, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(6)
+        valid_ip_addr[0] = ip_string
+    elif temp_bool == -1:
+        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 23, "Invalid Hostname or IP. Press 'r' to retry.", curses.color_pair(3))
     else:
-        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail, curses.color_pair(3))
-        screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 18,
-                      "Press 'r' to retry, or 'm' for menu.")
-
+        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(fail) / 2, fail, curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 18,
+                      "Press 'r' to retry this step, or 'm' for menu.")
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
         temp_char = screen.getch()
     if temp_char == 109:
         display_menu(screen)
     elif temp_char == 110:
-        print("TEMP, MOVE ON TO NEXT METHOD CALL")
+        menu_check_ldap_connection(screen)
     elif temp_char == 114:
         menu_ping_ldap_ip(screen)
 
 
-def my_raw_input(screen, y, x, prompt_string):
-    curses.echo()
-    screen.addstr(y, x, prompt_string, curses.color_pair(2))
-    screen.addch(y + 1, x, ">")
-    screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 20)
-    curses.noecho()
-    return str_input
+def menu_check_ldap_connection(screen):
+    """The method that handles the 'Check Connections to LDAP Server' option."""
+    screen.clear()
+    screen_dims = screen.getmaxyx()
+    key_press = 0
+    if valid_ip_addr[0] == 0:
+        screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - 26, "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
+        screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2 - 23, "Press p to go to previous step, or 'm' for menu", curses.color_pair(5))
+    while key_press not in (109, 112):
+        key_press = screen.getch()
+    if key_press == 109:
+        display_menu(screen)
+    elif key_press == 112:
+        menu_ping_ldap_ip(screen)
+
+
 
 
 def display_menu(screen):
+    """Displays the menu. Does most of the work for displaying options."""
     screen_dimensions = screen.getmaxyx()
     screen_half_y = screen_dimensions[0]/2
     screen_half_x = screen_dimensions[1]/2
@@ -109,30 +147,31 @@ def display_menu(screen):
         screen.addstr(0, screen_half_x - 11,
                       "LDAP Configuration Menu",curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
         screen.addstr(screen_half_y - 6, screen_half_x - len(menu_options[0])/2,
-                      (menu_options[0]).encode("utf-8"), menu_highlighting[0] | menu_color[0])
+                      menu_options[0].encode("utf-8"), menu_highlighting[0] | menu_color[0])
         screen.addstr(screen_half_y - 5, screen_half_x - len(menu_options[1])/2,
-                      menu_options[1], menu_highlighting[1] | menu_color[1])
+                      menu_options[1].encode("utf-8"), menu_highlighting[1] | menu_color[1])
         screen.addstr(screen_half_y - 4, screen_half_x - len(menu_options[2])/2,
-                      menu_options[2], menu_highlighting[2] | menu_color[2])
+                      menu_options[2].encode("utf-8"), menu_highlighting[2] | menu_color[2])
         screen.addstr(screen_half_y - 3, screen_half_x - len(menu_options[3])/2,
-                      menu_options[3], menu_highlighting[3] | menu_color[3])
+                      menu_options[3].encode("utf-8"), menu_highlighting[3] | menu_color[3])
         screen.addstr(screen_half_y - 2, screen_half_x - len(menu_options[4])/2,
-                      menu_options[4], menu_highlighting[4] | menu_color[4])
+                      menu_options[4].encode("utf-8"), menu_highlighting[4] | menu_color[4])
         screen.addstr(screen_half_y - 1, screen_half_x - len(menu_options[5])/2,
-                      menu_options[5], menu_highlighting[5] | menu_color[5])
+                      menu_options[5].encode("utf-8"), menu_highlighting[5] | menu_color[5])
         screen.addstr(screen_half_y + 0, screen_half_x - len(menu_options[6])/2,
-                      menu_options[6], menu_highlighting[6] | menu_color[6])
+                      menu_options[6].encode("utf-8"), menu_highlighting[6] | menu_color[6])
         screen.addstr(screen_half_y + 1, screen_half_x - len(menu_options[7])/2,
-                      menu_options[7], menu_highlighting[7] | menu_color[7])
+                      menu_options[7].encode("utf-8"), menu_highlighting[7] | menu_color[7])
         screen.addstr(screen_half_y + 2, screen_half_x - len(menu_options[8])/2,
-                      menu_options[8], menu_highlighting[8] | menu_color[8])
+                      menu_options[8].encode("utf-8"), menu_highlighting[8] | menu_color[8])
         screen.addstr(screen_half_y + 3, screen_half_x - len(menu_options[9])/2,
-                      menu_options[9], menu_highlighting[9] | menu_color[9])
+                      menu_options[9].encode("utf-8"), menu_highlighting[9] | menu_color[9])
         screen.addstr(screen_half_y + 4, screen_half_x - len(menu_options[10])/2,
-                      menu_options[10], menu_highlighting[10] | menu_color[10])
+                      menu_options[10].encode("utf-8"), menu_highlighting[10] | menu_color[10])
         screen.addstr(screen_half_y + 5, screen_half_x - len(menu_options[11])/2,
-                      menu_options[11], menu_highlighting[11] | menu_color[11])
-        screen.addstr(screen_half_y + 6, screen_half_x - 2, "Exit", menu_highlighting[12] | curses.color_pair(3))
+                      menu_options[11].encode("utf-8"), menu_highlighting[11] | menu_color[11])
+        screen.addstr(screen_half_y + 6, screen_half_x - 2, "Exit",
+                      menu_highlighting[12] | curses.color_pair(3))
         screen.refresh()
 
         key_press = screen.getch()
@@ -144,8 +183,14 @@ def display_menu(screen):
             menu_selection = option_num
             if option_num == 0:
                 menu_ping_ldap_ip(screen)
-
+            elif option_num == 1:
+                menu_check_ldap_connection(screen)
+            elif option_num == 12:
+                break
+            else:
+                display_menu(screen)
     curses.curs_set(1)
+
 
 curses.wrapper(show_instructions)
 curses.endwin()
