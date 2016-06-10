@@ -21,6 +21,7 @@ curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
 curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_WHITE)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
+curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
 check_list = ['☐'] * 12
@@ -57,17 +58,19 @@ def menu_ping_ldap_ip(screen):
     screen.clear()
     temp_char = 0
     screen_dims = screen.getmaxyx()
+
     ip_string = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 23,
                              "Please Enter the IP Address of the LDAP server.")
-    temp_bool = configTool.ping_LDAP_server(ip_string)  # change to boolean value
-
+    screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - 12, "Attempting to ping IP...", curses.color_pair(5) | curses.A_BLINK)
+    screen.refresh()
+    temp_bool = configTool.ping_LDAP_server(ip_string)
     if temp_bool == 0:
-        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(success)/2, success)
+        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(success)/2, success, curses.color_pair(6))
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"Ping LDAP Server IP ✓"
     else:
-        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail)
+        screen.addstr(screen_dims[0]/2 + 4, screen_dims[1]/2 - len(fail) / 2, fail, curses.color_pair(3))
         screen.addstr(screen_dims[0]/2 + 5, screen_dims[1]/2 - 18,
                       "Press 'r' to retry, or 'm' for menu.")
 
