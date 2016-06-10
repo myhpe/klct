@@ -23,11 +23,13 @@ def check_valid_IP(host_name):
 
 def ping_LDAP_server(host_name):
     """Checks if the given hostName is valid, and pings it.
-    Returns a string message indicating success of failure.
+    Returns -1 for invalid ip
+    Returns 0 for unsuccessful ping
+    Returns 1 for successful ping
     """
     is_valid = check_valid_IP(host_name)
     if not is_valid:
-        return "Invalid Hostname Format"
+        return -1
     response = None
     with open(os.devnull, "w"):
         try:
