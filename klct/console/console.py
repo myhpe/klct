@@ -18,9 +18,10 @@ if curses.has_colors():  # enable coloring
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
 curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
 curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
-curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_WHITE)
+curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
-curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_WHITE)
+curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
+curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
@@ -66,7 +67,6 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addch(y + 1, x, ">")
     screen.refresh()
     str_input = screen.getstr(y + 1, x + 1, 20)  # 20 = max chars to in string
-    # screen.addstr(y + 1, x + 1, str_input)
     curses.noecho()
     return str_input
 
@@ -92,14 +92,16 @@ def menu_ping_ldap_ip(screen):
     if temp_bool == 1 and ip_string != "":
         screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(success) / 2,
                       success, curses.color_pair(6))
-        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 26, "This IP will automatically be used in the next step.", curses.color_pair(4))
+        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 26,
+                      "This IP will automatically be used in the next step.", curses.color_pair(4))
         screen.addstr(screen_dims[0] / 2 + 6, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"Ping LDAP Server IP ✓"
-        menu_color[0] = curses.color_pair(6)
+        menu_color[0] = curses.color_pair(7)
         valid_ip_addr[0] = ip_string
     elif temp_bool == -1:
-        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 23, "Invalid Hostname or IP. Press 'r' to retry.", curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 23, "Invalid Hostname or IP. Press 'r' to retry.",
+                      curses.color_pair(3))
     else:
         screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(fail) / 2, fail, curses.color_pair(3))
         screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 18,
@@ -109,27 +111,109 @@ def menu_ping_ldap_ip(screen):
     if temp_char == 109:
         display_menu(screen)
     elif temp_char == 110:
-        menu_check_ldap_connection(screen)
+        menu_check_ldap_connection_basic(screen)
     elif temp_char == 114:
         menu_ping_ldap_ip(screen)
 
 
-def menu_check_ldap_connection(screen):
+def menu_check_ldap_connection_basic(screen):
     """The method that handles the 'Check Connections to LDAP Server' option."""
     screen.clear()
     screen_dims = screen.getmaxyx()
     key_press = 0
     if valid_ip_addr[0] == 0:
-        screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - 26, "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
-        screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2 - 23, "Press p to go to previous step, or 'm' for menu", curses.color_pair(5))
-    while key_press not in (109, 112):
-        key_press = screen.getch()
-    if key_press == 109:
-        display_menu(screen)
-    elif key_press == 112:
-        menu_ping_ldap_ip(screen)
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 26,
+                      "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
+                      "Press p to go to previous step, or 'm' for menu", curses.color_pair(5))
+        while key_press not in (109, 112):  # 109 == m, 112 == p
+            key_press = screen.getch()
+        if key_press == 109:
+            display_menu(screen)
+        elif key_press == 112:
+            menu_ping_ldap_ip(screen)
+    else:
+        host_ip = valid_ip_addr[0]
+        temp_str = my_raw_input(screen, screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 22,
+                                "Please enter the port number. Default is 389.")
+        while not temp_str.isdigit():
+            screen.clear()
+            temp_str = my_raw_input(screen, screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 30,
+                                    "Input entered is not a valid port number. Please retry.")
+        port_numb = int(temp_str)
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 18, "Attempting to connect to LDAP server",
+                      curses.color_pair(5))
+        screen.refresh()
+        triple = configTool.connect_LDAP_server_basic(host_ip, port_numb)
+        if triple[0] == 1:
+            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(triple[1]) / 2, triple[1],
+                          curses.color_pair(6) | curses.A_BOLD)
+            menu_options[1] = u"Check Connection to LDAP ✓"
+            menu_color[1] = curses.color_pair(7)
+            screen.addstr(screen_dims[0] / 2 + 6, screen_dims[1] / 2 - 25,
+                          "Press 'n' to move on to next step, or 'm' for menu.")
+
+            character = screen.getch()
+            while character not in (109, 110):
+                character = screen.getch()
+            if character == 109:
+                display_menu(screen)
+            elif character == 110:
+                print("FIX MEEEEEEEEEE")
+        else:
+            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(triple[1]) / 2, triple[1],
+                          curses.color_pair(3) | curses.A_BOLD)
+
+            print("FIX MEEEEEEEEEEEEE")
 
 
+
+def menu_check_ldap_connection_adv(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_get_server_info(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_check_ldap_suffix(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_show_list_user_object_classes(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_check_user_tree_dn_show_users(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_get_specific_user(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_show_list_group_object_classes(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_check_group_tree_dn_show_groups(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_get_specific_group(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_additional_config_options(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_show_config(screen):
+    print("NEEDS IMPLEMENTATION")
+
+
+def menu_create_config(screen):
+    print("NEEDS IMPLEMENTATION")
 
 
 def display_menu(screen):
@@ -142,7 +226,7 @@ def display_menu(screen):
     menu_selection = -1
     option_num = 0
     while menu_selection < 0:
-        menu_highlighting = [0] * 13
+        menu_highlighting = [0] * 13 # number of menu options
         menu_highlighting[option_num] = curses.A_STANDOUT
         screen.addstr(0, screen_half_x - 11,
                       "LDAP Configuration Menu",curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
@@ -184,13 +268,12 @@ def display_menu(screen):
             if option_num == 0:
                 menu_ping_ldap_ip(screen)
             elif option_num == 1:
-                menu_check_ldap_connection(screen)
+                menu_check_ldap_connection_basic(screen)
             elif option_num == 12:
                 break
             else:
                 display_menu(screen)
     curses.curs_set(1)
-
 
 curses.wrapper(show_instructions)
 curses.endwin()
