@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import curses
 import locale
+import os.path
 import sys
 sys.path.insert(0, '../ldap')
 import configTool
 
 
 """SET UP"""
-locale.setlocale(locale.LC_ALL,"")  # for unicode support
+locale.setlocale(locale.LC_ALL, "")  # for unicode support
 term_screen = curses.initscr()  # terminal screen
 term_screen_dimensions = term_screen.getmaxyx()  # returns tuple (y,x) of current screen resolution
 term_screen.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
@@ -25,20 +26,21 @@ curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
 
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
-menu_color = [curses.color_pair(2)] * 12  # number of menu options = 12
-menu_options = ["Ping LDAP Server IP",
-                "Check Connection to LDAP Server",
-                "Get Server Information",
-                "Check LDAP Suffix",
-                "Show List of User-Related ObjectClasses",
-                "Check User Tree DN and Show List of Users",
-                "Get a Specific User",
-                "Show List of Group Related ObjectClasses",
-                "Check Group Tree DN and Show List of Groups",
-                "Get Specific Group",
-                "Add Additional Configuration Options",
-                "Show Configuration",
-                "Save/Create Configuration File"]
+menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
+menu_options = ["1. Enter/Validate LDAP Server IP",
+                "2. Check Connection to LDAP Server (URL)",
+                "3. Check Connection to LDAP Server (URL,User/Pass,SSL/TLS)",
+                "4. Get Server Information",
+                "5. Check LDAP Suffix",
+                "6. Show List of User-Related ObjectClasses",
+                "7. Check User Tree DN and Show List of Users",
+                "8. Get a Specific User",
+                "9. Show List of Group Related ObjectClasses",
+                "10. Check Group Tree DN and Show List of Groups",
+                "11. Get Specific Group",
+                "12. Add Additional Configuration Options",
+                "13. Show Configuration",
+                "14. Save/Create Configuration File"]
 valid_ip_addr = [0]  # string value of IP address, set to false (0) until successful pinging of IP address
 
 
@@ -71,6 +73,46 @@ def my_raw_input(screen, y, x, prompt_string):
     return str_input
 
 
+def my_pw_input(screen, y, x, prompt_string):
+    """Prompt for input from user. Given a (y, x) coordinate,
+    will show a prompt at (y + 1, x). Currently only able to
+    prompt for 20 chars, but can change later."""
+    curses.noecho() # no echoing
+    screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addstr(y + 1, x, "")
+    screen.refresh()
+    str_input = screen.getstr(y + 1, x + 1, 20)  # 20 = max chars to in string
+    return str_input
+
+
+def prompt_char_input(screen, y, x, prompt_string):
+    """Prompt for a single character input from user. Given a (y, x) coordinate,
+    will show a prompt at (y + 1, x)."""
+    curses.echo() # no echoing
+    screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addch(y + 1, x, ">")
+    screen.refresh()
+    ch_input = screen.getstr(y + 1, x + 1, 1)  # 20 = max chars to in string
+    return ch_input
+
+
+def check_ip_exists(screen, screen_dims):
+    key_press = 0
+    if valid_ip_addr[0] == 0:
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 26,
+                      "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 22,
+                      "Press p to input ip address, or 'm' for menu", curses.color_pair(5))
+        while key_press not in (109, 112):  # 109 == m, 112 == p
+            key_press = screen.getch()
+        if key_press == 109:
+            display_menu(screen)
+        elif key_press == 112:
+            menu_ping_ldap_ip(screen)
+    else:
+        return True
+
+
 """MAIN METHODS"""
 
 
@@ -93,18 +135,18 @@ def menu_ping_ldap_ip(screen):
         screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(success) / 2,
                       success, curses.color_pair(6))
         screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 26,
-                      "This IP will automatically be used in the next step.", curses.color_pair(4))
+                      "This IP will automatically be used in the next steps.", curses.color_pair(4))
         screen.addstr(screen_dims[0] / 2 + 6, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.")
-        menu_options[0] = u"Ping LDAP Server IP ✓"
+        menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
         valid_ip_addr[0] = ip_string
     elif temp_bool == -1:
-        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 23, "Invalid Hostname or IP. Press 'r' to retry.",
-                      curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 30,
+                      "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
     else:
         screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(fail) / 2, fail, curses.color_pair(3))
-        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 18,
+        screen.addstr(screen_dims[0] / 2 + 5, screen_dims[1] / 2 - 23,
                       "Press 'r' to retry this step, or 'm' for menu.")
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
         temp_char = screen.getch()
@@ -113,6 +155,7 @@ def menu_ping_ldap_ip(screen):
     elif temp_char == 110:
         menu_check_ldap_connection_basic(screen)
     elif temp_char == 114:
+
         menu_ping_ldap_ip(screen)
 
 
@@ -120,18 +163,8 @@ def menu_check_ldap_connection_basic(screen):
     """The method that handles the 'Check Connections to LDAP Server' option."""
     screen.clear()
     screen_dims = screen.getmaxyx()
-    key_press = 0
-    if valid_ip_addr[0] == 0:
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 26,
-                      "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
-        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
-                      "Press p to go to previous step, or 'm' for menu", curses.color_pair(5))
-        while key_press not in (109, 112):  # 109 == m, 112 == p
-            key_press = screen.getch()
-        if key_press == 109:
-            display_menu(screen)
-        elif key_press == 112:
-            menu_ping_ldap_ip(screen)
+    if not check_ip_exists(screen, screen_dims):
+        pass
     else:
         host_ip = valid_ip_addr[0]
         temp_str = my_raw_input(screen, screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 22,
@@ -148,28 +181,59 @@ def menu_check_ldap_connection_basic(screen):
         if triple[0] == 1:
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(triple[1]) / 2, triple[1],
                           curses.color_pair(6) | curses.A_BOLD)
-            menu_options[1] = u"Check Connection to LDAP ✓"
+            menu_options[1] = u"2. Check Connection to LDAP (URL) ✓"
             menu_color[1] = curses.color_pair(7)
-            screen.addstr(screen_dims[0] / 2 + 6, screen_dims[1] / 2 - 25,
+            screen.addstr(screen_dims[0] / 2 + 3, screen_dims[1] / 2 - 25,
                           "Press 'n' to move on to next step, or 'm' for menu.")
 
             character = screen.getch()
             while character not in (109, 110):
                 character = screen.getch()
-            if character == 109:
+            if character == 109: # 109 == m
                 display_menu(screen)
-            elif character == 110:
+            elif character == 110: # 110 == n
                 print("FIX MEEEEEEEEEE")
-        else:
+        else: # error occurred during ldap ping
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(triple[1]) / 2, triple[1],
                           curses.color_pair(3) | curses.A_BOLD)
-
-            print("FIX MEEEEEEEEEEEEE")
-
+            screen.addstr(screen_dims[0] / 2 + 3, screen_dims[1] / 2 - 18,
+                          "Press 'r' to retry, or 'm' for menu.")
+            char = screen.getch()
+            while char not in (109, 114):
+                char = screen.getch()
+            if char == 109:
+                display_menu(screen)
+            elif char == 114:
+                menu_check_ldap_connection_basic(screen)
 
 
 def menu_check_ldap_connection_adv(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen.clear()
+    max_yx = screen.getmaxyx()
+    if not check_ip_exists(screen,max_yx):
+        pass
+    else:
+        host_ip = valid_ip_addr[0]
+        temp_str = my_raw_input(screen, max_yx[0] / 2 - 3, max_yx[1] / 2 - 22,
+                                "Please enter the port number. Default is 389.")
+        while not temp_str.isdigit():
+            screen.clear()
+            temp_str = my_raw_input(screen, max_yx[0] / 2 - 3, max_yx[1] / 2 - 30,
+                                    "Input entered is not a valid port number. Please retry.")
+        port_numb = int(temp_str)
+        user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
+        pass_wd = my_pw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password and hit enter.")
+        tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]")
+        if tls_y_or_n == 'n':
+            tls_cert_path = None
+        else:
+            tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
+                                         "Please enter the path of the TLS certificate.")
+            while not os.path.isfile(tls_cert_path):
+                screen.addstr(max_yx[0] / 2 + 6, max_yx[1] / 2 - 22, "                                              ")
+                tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
+                                             "File not found. Please try again.")
+        screen.getch()
 
 
 def menu_get_server_info(screen):
@@ -226,50 +290,56 @@ def display_menu(screen):
     menu_selection = -1
     option_num = 0
     while menu_selection < 0:
-        menu_highlighting = [0] * 13 # number of menu options
+        menu_highlighting = [0] * 15 # number of menu options
         menu_highlighting[option_num] = curses.A_STANDOUT
-        screen.addstr(0, screen_half_x - 11,
-                      "LDAP Configuration Menu",curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
-        screen.addstr(screen_half_y - 6, screen_half_x - len(menu_options[0])/2,
+        screen.addstr(screen_half_y - 9, screen_half_x - 11,
+                      "LDAP Configuration Menu", curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
+        screen.addstr(screen_half_y - 6, screen_half_x - 25,
                       menu_options[0].encode("utf-8"), menu_highlighting[0] | menu_color[0])
-        screen.addstr(screen_half_y - 5, screen_half_x - len(menu_options[1])/2,
+        screen.addstr(screen_half_y - 5, screen_half_x - 25,
                       menu_options[1].encode("utf-8"), menu_highlighting[1] | menu_color[1])
-        screen.addstr(screen_half_y - 4, screen_half_x - len(menu_options[2])/2,
+        screen.addstr(screen_half_y - 4, screen_half_x - 25,
                       menu_options[2].encode("utf-8"), menu_highlighting[2] | menu_color[2])
-        screen.addstr(screen_half_y - 3, screen_half_x - len(menu_options[3])/2,
+        screen.addstr(screen_half_y - 3, screen_half_x - 25,
                       menu_options[3].encode("utf-8"), menu_highlighting[3] | menu_color[3])
-        screen.addstr(screen_half_y - 2, screen_half_x - len(menu_options[4])/2,
+        screen.addstr(screen_half_y - 2, screen_half_x - 25,
                       menu_options[4].encode("utf-8"), menu_highlighting[4] | menu_color[4])
-        screen.addstr(screen_half_y - 1, screen_half_x - len(menu_options[5])/2,
+        screen.addstr(screen_half_y - 1, screen_half_x - 25,
                       menu_options[5].encode("utf-8"), menu_highlighting[5] | menu_color[5])
-        screen.addstr(screen_half_y + 0, screen_half_x - len(menu_options[6])/2,
+        screen.addstr(screen_half_y + 0, screen_half_x - 25,
                       menu_options[6].encode("utf-8"), menu_highlighting[6] | menu_color[6])
-        screen.addstr(screen_half_y + 1, screen_half_x - len(menu_options[7])/2,
+        screen.addstr(screen_half_y + 1, screen_half_x - 25,
                       menu_options[7].encode("utf-8"), menu_highlighting[7] | menu_color[7])
-        screen.addstr(screen_half_y + 2, screen_half_x - len(menu_options[8])/2,
+        screen.addstr(screen_half_y + 2, screen_half_x - 25,
                       menu_options[8].encode("utf-8"), menu_highlighting[8] | menu_color[8])
-        screen.addstr(screen_half_y + 3, screen_half_x - len(menu_options[9])/2,
+        screen.addstr(screen_half_y + 3, screen_half_x - 25,
                       menu_options[9].encode("utf-8"), menu_highlighting[9] | menu_color[9])
-        screen.addstr(screen_half_y + 4, screen_half_x - len(menu_options[10])/2,
+        screen.addstr(screen_half_y + 4, screen_half_x - 25,
                       menu_options[10].encode("utf-8"), menu_highlighting[10] | menu_color[10])
-        screen.addstr(screen_half_y + 5, screen_half_x - len(menu_options[11])/2,
+        screen.addstr(screen_half_y + 5, screen_half_x - 25,
                       menu_options[11].encode("utf-8"), menu_highlighting[11] | menu_color[11])
-        screen.addstr(screen_half_y + 6, screen_half_x - 2, "Exit",
-                      menu_highlighting[12] | curses.color_pair(3))
+        screen.addstr(screen_half_y + 6, screen_half_x - 25,
+                      menu_options[12].encode("utf-8"), menu_highlighting[12] | menu_color[12])
+        screen.addstr(screen_half_y + 7, screen_half_x - 25,
+                      menu_options[13].encode("utf-8"), menu_highlighting[13] | menu_color[13])
+        screen.addstr(screen_half_y + 8, screen_half_x - 25, "15. Exit",
+                      menu_highlighting[14] | curses.color_pair(3))
         screen.refresh()
 
         key_press = screen.getch()
         if key_press == curses.KEY_UP:
-            option_num = (option_num - 1) % 13
+            option_num = (option_num - 1) % 15
         elif key_press == curses.KEY_DOWN:
-            option_num = (option_num + 1) % 13
+            option_num = (option_num + 1) % 15
         elif key_press == ord('\n'):
             menu_selection = option_num
             if option_num == 0:
                 menu_ping_ldap_ip(screen)
             elif option_num == 1:
                 menu_check_ldap_connection_basic(screen)
-            elif option_num == 12:
+            elif option_num == 2:
+                menu_check_ldap_connection_adv(screen)
+            elif option_num == 14:
                 break
             else:
                 display_menu(screen)
