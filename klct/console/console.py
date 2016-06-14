@@ -68,7 +68,7 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 20)  # 20 = max chars to in string
+    str_input = screen.getstr(y + 1, x + 1, 30)  # 20 = max chars to in string
     curses.noecho()
     return str_input
 
@@ -79,10 +79,31 @@ def my_pw_input(screen, y, x, prompt_string):
     prompt for 20 chars, but can change later."""
     curses.noecho() # no echoing
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
-    screen.addstr(y + 1, x, "")
+    screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 20)  # 20 = max chars to in string
-    return str_input
+    x_coord = x + 1
+    str_input_pos = 0
+    c = screen.getch()
+    screen.addstr(0,0,str(c))
+    str_input = []
+    while c != 10:
+        if c < 256:
+            str_input.append(chr(c))
+            screen.addch(y + 1, x_coord, "*")
+            x_coord += 1
+            str_input_pos += 1
+        c = screen.getch()
+        if c in (263, 8, 330):
+            if x_coord > x + 1:
+                x_coord -= 1
+            screen.addch(y + 1, x_coord, " ")
+            if str_input_pos > 0:
+                str_input_pos -= 1
+            if len(str_input) > 0:
+                str_input.pop()
+    pw_input = ''.join(str_input)
+    screen.addstr(0,0,pw_input)
+    return pw_input
 
 
 def prompt_char_input(screen, y, x, prompt_string):
@@ -231,9 +252,11 @@ def menu_check_ldap_connection_adv(screen):
                                          "Please enter the path of the TLS certificate.")
             while not os.path.isfile(tls_cert_path):
                 screen.addstr(max_yx[0] / 2 + 6, max_yx[1] / 2 - 22, "                                              ")
+                screen.addstr(max_yx[0] / 2 + 7, max_yx[1] / 2 - 22, ">                                              ")
                 tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
                                              "File not found. Please try again.")
         screen.getch()
+        print("IMPLEMENT ME PLEASE")
 
 
 def menu_get_server_info(screen):
