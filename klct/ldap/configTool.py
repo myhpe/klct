@@ -21,6 +21,48 @@ def check_valid_IP(host_name):
         return 0
 
 
+def setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):
+    """Sets up a connection given the parameters.
+    Return the connection socket on success
+    Return 0 on failure
+    Note: unbind the returned connection when finished using socket
+    """
+    if port_number is None and want_tls=='n':
+        port_number = 389
+    elif port_number is None and want_tls=='y':
+        port_number = 636
+    try:
+        server = None
+        if want_tls == 'n':
+            server = Server(host_name, port=port_number, get_info=ALL)
+        else:
+            tls_object = ldap3.Tls(ca_certs_file=tls_cert_path, validate=ssl.CERT_REQUIRED)
+            server = Server(host_name, port=port_number, use_ssl=True, tls=tls_object, get_info=ALL)
+        #print("\nTrying to connect...")
+        #print(server)
+        conn = Connection(server, version=3, user=user_name, password=password, auto_bind=True)
+        #print("connection started")
+        #conn.open() #bind implies open
+        #if not conn.bind():
+        #    return 0, "bind failed", conn.results
+        if want_tls == 'y':
+            #print("starting tls\n")
+            #conn.open()
+            conn.start_tls()
+        #print(conn)
+        return conn, "successfully connected", None
+    except ldap3.LDAPSocketOpenError as err:
+        return 0, "Failed to connect due to invalid socket.", err
+    except ldap3.LDAPInvalidPortError as err:
+        return 0, "Invalid Port", err
+    except AttributeError as err:
+        return 0, "Invalid log in info", err
+    except ldap3.LDAPPasswordIsMandatoryError as err:
+        return 0, "Please enter a password", err
+    except:
+        return 0, "Failed to connect due to unknown reasons", sys.exc_info()[1]
+
+
 def ping_LDAP_server(host_name):
     """Checks if the given hostName is valid, and pings it.
     Returns -1 for invalid ip
@@ -44,6 +86,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """Attempts to connect to the provided hostName and port number, default port is 389 if none provided.
     Return a string indicating the success or failure (along with failure reasons) of the connection.
     Return an exception indicating what went wrong (returns None on success).
+    Note: call new modularized methods
     """
     if port_number is None:
         port_number = 389
@@ -63,43 +106,18 @@ def connect_LDAP_server_basic(host_name, port_number):
         return 0, "Failed to connect due to unknown reasons", sys.exc_info()[0]
 
 
-def connect_LDAP_server(host_name, port_number, user_name, password, tls_cert_path):
+def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, tls_cert_path):
     """Attempts to connect to the provided hostName and port number, default port is 389 if none provided, using the provided user name and pass.
     Return a string indicating the success or failure (along with failure reasons) of the connection.
     Return an exception indicating what went wrong (returns None on success).
+    Note: tls not working
     """
-    if port_number is None:
-        port_number = 389
-    if not os.path.exists(tls_cert_path):
-        return 0, "Invalid tls certificate path", None
-    #tl = ldap3.Tls(local_private_key_file='client_private_key.pem', local_certificate_file='ca.pem', validate=ssl.CERT_REQUIRED, version=ssl.PROTOCOL_TLSv1, ca_certs_path=tls_cert_path)#ca_certs_file='cacert.b64')
-    tl = ldap3.Tls(ca_certs_file=tls_cert_path, validate=ssl.CERT_REQUIRED)
-    try:
-        server = Server(host_name, port=port_number, use_ssl=False, tls=tl)
-        print("\nTrying to connect...")
-        #config = ConfigParser.RawConfigParser()
-        #basedn = "uid=%s,%s,%s" %(username, )
-        #print("basedn:%s" % basedn)
-        conn = Connection(server, user=user_name, password=password)
-        conn.open()
-        print("line:78")
-        conn.start_tls()
-        print("line:80")
-        if not conn.bind():
-            return 0, "bind failed", conn.results
-        else:
-            conn.unbind()
-            return 1, "Successfully connected!", None
-    except ldap3.LDAPSocketOpenError as err:
-        return 0, "Failed to connect due to invalid socket.", err
-    except ldap3.LDAPInvalidPortError as err:
-        return 0, "Invalid Port", err
-    except AttributeError as err:
-        return 0, "Invalid log in info", err
-    except ldap3.LDAPPasswordIsMandatoryError as err:
-        return 0, "Please enter a password", err
-    except:
-        return 0, "Failed to connect due to unknown reasons", sys.exc_info()[0]
+    conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
+    if conn_info[0] == 0:
+        return conn_info[0], conn_info[1], conn_info[2]
+    else:
+        conn_info[0].unbind()
+        return 1, "Successfully connected", None
 
 def retrieve_server_info(host_name, user_name, password):
 #ad vs. openldap, version, etc
