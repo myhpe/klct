@@ -75,8 +75,8 @@ def my_raw_input(screen, y, x, prompt_string):
 
 def my_pw_input(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
-    will show a prompt at (y + 1, x). Currently only able to
-    prompt for 20 chars, but can change later."""
+    will show a prompt at (y + 1, x). Will echo characters but as an '*',
+    to hide the password's characters from showing on the screen."""
     curses.noecho() # no echoing
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
@@ -84,7 +84,6 @@ def my_pw_input(screen, y, x, prompt_string):
     x_coord = x + 1
     str_input_pos = 0
     c = screen.getch()
-    screen.addstr(0,0,str(c))
     str_input = []
     while c != 10:
         if c < 256:
@@ -102,7 +101,6 @@ def my_pw_input(screen, y, x, prompt_string):
             if len(str_input) > 0:
                 str_input.pop()
     pw_input = ''.join(str_input)
-    screen.addstr(0,0,pw_input)
     return pw_input
 
 
@@ -235,16 +233,27 @@ def menu_check_ldap_connection_adv(screen):
         pass
     else:
         host_ip = valid_ip_addr[0]
-        temp_str = my_raw_input(screen, max_yx[0] / 2 - 3, max_yx[1] / 2 - 22,
+        temp_str = my_raw_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 22,
                                 "Please enter the port number. Default is 389.")
         while not temp_str.isdigit():
             screen.clear()
-            temp_str = my_raw_input(screen, max_yx[0] / 2 - 3, max_yx[1] / 2 - 30,
+            temp_str = my_raw_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 22,
                                     "Input entered is not a valid port number. Please retry.")
         port_numb = int(temp_str)
+        userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
+                                          "Does LDAP server require User/Pass? [y/n]")
+        while userpw_y_or_n not in ('y', 'n'):
+            screen.addstr(max_yx[0] / 2 - 2, max_yx[1] / 2 - 22, "                                     ")
+            screen.addstr(max_yx[0] / 2 - 1, max_yx[1] / 2 - 22, "                    ")
+            userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
+                                              "Does LDAP server require User/Pass? [y/n]")
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         pass_wd = my_pw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password and hit enter.")
         tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]")
+        while tls_y_or_n not in ('y', 'n'):
+            screen.addstr(max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "                                        ")
+            screen.addstr(max_yx[0] / 2 + 5, max_yx[1] / 2 - 22, "                    ")
+            tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]")
         if tls_y_or_n == 'n':
             tls_cert_path = None
         else:
