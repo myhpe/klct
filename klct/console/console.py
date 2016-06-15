@@ -242,7 +242,7 @@ def menu_check_ldap_connection_basic(screen):
 def menu_check_ldap_connection_adv(screen):
     screen.clear()
     max_yx = screen.getmaxyx()
-    if not check_ip_exists(screen,max_yx):
+    if not check_ip_exists(screen, max_yx):
         pass
     else:
         host_ip = valid_ip_addr[0]
@@ -256,7 +256,8 @@ def menu_check_ldap_connection_adv(screen):
         userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
                                           "Does LDAP server require User/Pass? [y/n]", ('y', 'n'))
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
-        pass_wd = my_pw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password and hit enter.")
+        # if want password hidden as "*" change my_raw_input to my_pw_input
+        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password and hit enter.")
         tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22,
                                        "Is TLS enabled? Enter [y/n]", ('y', 'n'))
         if tls_y_or_n == 'n':
