@@ -36,11 +36,12 @@ def check_valid_IP(host_name):
 def setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):
     """Sets up a connection given the parameters.
     Note: unbind the returned connection when finished using socket
+    Note: need to find a way to check validation of certificate, eg. expiration, etc
     """
-    return_values = {'exit_status':0, 'message':[], 'error':[], 'server':[], 'conn':[]}
-    if port_number is None and want_tls=='n':
+    return_values = {'exit_status': 0, 'message': [], 'error': [], 'server': [], 'conn': []}
+    if port_number is None and want_tls == 'n':
         port_number = 389
-    elif port_number is None and want_tls=='y':
+    elif port_number is None and want_tls == 'y':
         port_number = 636
     try:
         if want_tls == 'n':
@@ -58,7 +59,7 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
         if want_tls == 'y':
             #print("starting tls\n")
             #conn.open()
-            conn.start_tls()
+            return_values['conn'].start_tls()
         #print(conn)
         return_values['exit_status'] = 1
         return_values['message'] = "Successfully connected"
@@ -78,6 +79,11 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
         return_values['message'] = "Failed to connect due to unknown reasons"
         return_values['error'] = sys.exc_info()[1]
     return return_values
+
+
+def create_filter():
+    return "filter goes here"
+
 
 def ping_LDAP_server(host_name):
     """Checks if the given hostName is valid, and pings it.
@@ -117,33 +123,44 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
 def retrieve_server_info(server):
     """Retrieves the information related to the server passed in
     """
-    dict = {'info':server.info, 'schema':server.schema}
+    dict = {'info': server.info, 'schema': server.schema}
     return dict
 
 
-#def check_LDAP_suffix(conn, base_dn):
-    #for entry in dc_list:
-    #    check if each entry in dc_list is in one of the suffixes in the ldapserver entries
+def check_LDAP_suffix(conn, base_dn):
+    """Checks that the given base_dn is the correct suffix for the given connection
+    """
+    assert conn.closed is not True
+    if conn.search(search_base=base_dn, search_filter='(cn=admin)') is True:
+        return {'exit_status': 1, 'message': "The given base DN is correct"}
+    else:
+        return {'exit_status': 0, 'message': "The given base DN is not correct"}
 
 
-def list_user_related_OC():
-    print("needs to be implemented")
+def list_user_related_OC(conn, base_dn, user_name):
+    assert conn.closed is not True
+    if conn.search(search_base=base_dn, search_filter='(ou=Users)', attributes=['objectclass']) is True: #need to fix filter
+        print(conn.entries)
 
 
-def list_users(conn, limit):
-    print("needs to be implemented")
-    if limit == None:
+def list_users(conn, base_dn, user_name, limit):
+    """Lists the users, up to the limit
+    wip
+    """
+    assert conn.closed is not True
+    if limit is None:
         limit = 3
-    conn.search(search_base='', search_filter='(objectClass=users)', search_scope=ldap3.SUBTREE, attributes=['cn','user'], paged_size=limit)
-
-
-def get_user(conn, name):
-    #conn.search(search_base='dc=cdl,dc=hp,dc=com', search_filter ='(ou='+name+')', search_scope=ldap3.SUBTREE, attributes=['title'], paged_size=5)
-    #conn.search('dc=cdl,dc=hp,dc=com', '(givenName='+name+')')
-    conn.search('dc=cdl,dc=hp,dc=com', '(ou='+name+')', attributes=['sn','krbLastPwdChange','objectclass'])
+    conn.search(search_base=user_name + ',' + base_dn, search_filter='(', search_scope=ldap3.SUBTREE, attributes=[])
     print(conn.entries)
-    #for entry in conn.response:
-    #    print(entry['dn'], entry['attributes'])
+
+
+def get_user(conn, base_dn, user_name, name):
+    """Returns a specific user
+    wip
+    """
+    assert conn.closed is not True
+    conn.search(search_base=user_name + ',' + base_dn, search_filter='(ou='+name+')')
+    return conn.entries
 
 
 def list_group_related_OC():
@@ -164,4 +181,3 @@ def show_config():
 
 def save_config():
     print("needs to be implemented")
- 
