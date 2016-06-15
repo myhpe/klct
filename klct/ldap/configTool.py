@@ -12,13 +12,25 @@ def check_valid_IP(host_name):
     """Checks if the given hostName is a valid IP address.
     Return 1 if valid, 0 if invalid.
     note: only checks for valid ipv4 IPs
-          need to implement validation for URLs and IPV6
+          need to implement validation for IPV6
     """
     try:
-        socket.inet_aton(host_name)
-        return 1
-    except socket.error:
-        return 0
+        host_name = socket.gethostbyname(host_name)
+        try:
+            socket.inet_aton(host_name)
+            return 1
+        except socket.error:
+            try:
+                socket.inet_pton(socket.AF_INET6, host_name)
+                return 1
+            except OSError:
+                return 0
+    except socket.gaierror:
+        try:
+            socket.inet_pton(socket.AF_INET6, host_name)
+            return 1
+        except socket.error:
+            return 0
 
 
 def setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):

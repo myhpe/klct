@@ -3,6 +3,7 @@ import curses
 import locale
 import os.path
 import sys
+import string
 sys.path.insert(0, '../ldap')
 import configTool
 
@@ -104,14 +105,20 @@ def my_pw_input(screen, y, x, prompt_string):
     return pw_input
 
 
-def prompt_char_input(screen, y, x, prompt_string):
-    """Prompt for a single character input from user. Given a (y, x) coordinate,
-    will show a prompt at (y + 1, x)."""
+def prompt_char_input(screen, y, x, prompt_string, list):
+    """Prompt for a single character input from user until user gives a char in list.
+     Given a (y, x) coordinate, will show a prompt at (y + 1, x)."""
     curses.echo() # no echoing
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
     ch_input = screen.getstr(y + 1, x + 1, 1)  # 20 = max chars to in string
+    while ch_input not in list:
+        screen.addstr(y, x, "                                     ")
+        screen.addstr(y + 1, x, "> ")
+        screen.addstr(y, x, prompt_string, curses.color_pair(2))
+        screen.refresh()
+        ch_input = screen.getstr(y + 1, x + 1, 1)
     return ch_input
 
 
@@ -129,6 +136,13 @@ def check_ip_exists(screen, screen_dims):
         elif key_press == 112:
             menu_ping_ldap_ip(screen)
     else:
+        y_n = prompt_char_input(screen, screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 26,
+                          "Valid IP has been found, would you like to use this? [y/n]", ('y','n'))
+        screen.clear()
+        if y_n == 'y':
+            pass
+        else:
+            menu_ping_ldap_ip(screen)
         return True
 
 
@@ -149,7 +163,7 @@ def menu_ping_ldap_ip(screen):
     screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
                   curses.color_pair(5) | curses.A_BLINK)
     screen.refresh()
-    temp_bool = configTool.ping_LDAP_server(ip_string)
+    temp_bool = configTool.ping_LDAP_server(string.lstrip(ip_string))
     if temp_bool == 1 and ip_string != "":
         screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(success) / 2,
                       success, curses.color_pair(6))
@@ -174,7 +188,6 @@ def menu_ping_ldap_ip(screen):
     elif temp_char == 110:
         menu_check_ldap_connection_basic(screen)
     elif temp_char == 114:
-
         menu_ping_ldap_ip(screen)
 
 
@@ -241,19 +254,11 @@ def menu_check_ldap_connection_adv(screen):
                                     "Input entered is not a valid port number. Please retry.")
         port_numb = int(temp_str)
         userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
-                                          "Does LDAP server require User/Pass? [y/n]")
-        while userpw_y_or_n not in ('y', 'n'):
-            screen.addstr(max_yx[0] / 2 - 2, max_yx[1] / 2 - 22, "                                     ")
-            screen.addstr(max_yx[0] / 2 - 1, max_yx[1] / 2 - 22, "                    ")
-            userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
-                                              "Does LDAP server require User/Pass? [y/n]")
+                                          "Does LDAP server require User/Pass? [y/n]", ('y', 'n'))
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         pass_wd = my_pw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password and hit enter.")
-        tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]")
-        while tls_y_or_n not in ('y', 'n'):
-            screen.addstr(max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "                                        ")
-            screen.addstr(max_yx[0] / 2 + 5, max_yx[1] / 2 - 22, "                    ")
-            tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]")
+        tls_y_or_n = prompt_char_input(screen, max_yx[0] / 2 + 4, max_yx[1] / 2 - 22,
+                                       "Is TLS enabled? Enter [y/n]", ('y', 'n'))
         if tls_y_or_n == 'n':
             tls_cert_path = None
         else:
@@ -372,7 +377,7 @@ def display_menu(screen):
             elif option_num == 2:
                 menu_check_ldap_connection_adv(screen)
             elif option_num == 14:
-                break
+                sys.exit(0)
             else:
                 display_menu(screen)
     curses.curs_set(1)
