@@ -126,30 +126,38 @@ def check_LDAP_suffix(conn, base_dn):
 
 
 def list_user_related_OC(conn, base_dn, user_name):
+    """Returns a list of the object classes related to the given user.
+    """
     assert conn.closed is not True
-    if conn.search(search_base=base_dn, search_filter='(ou=Users)', attributes=['objectclass']) is True: #need to fix filter
-        print(conn.entries)
+    search_filter = create_filter()
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+        return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+    else:
+        return {'exit_status': 0, 'objectclasses': None}
 
 
 def list_users(conn, base_dn, user_name, limit):
     """Lists the users, up to the limit
-    wip
     """
     assert conn.closed is not True
     if limit is None:
         limit = 3
-    conn.search(search_base=user_name + ',' + base_dn, search_filter='(', search_scope=ldap3.SUBTREE, attributes=[])
-    print(conn.entries)
+    search_filter = create_filter()
+    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+        return {'exit_status': 1, 'users': conn.entries}
+    else:
+        return {'exit_status': 0, 'users': None}
 
 
 def get_user(conn, base_dn, user_name, name):
     """Returns a specific user
-    wip
     """
     assert conn.closed is not True
-    conn.search(search_base=user_name + ',' + base_dn, search_filter='(ou='+name+')')
-    return conn.entries
-
+    search_filter = create_filter()
+    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[]) is True:
+        return {'exit_status': 1, 'user': conn.entries}
+    else:
+        return {'exit_status': 0, 'user': None}
 
 def list_group_related_OC():
     print("needs to be implemented")
