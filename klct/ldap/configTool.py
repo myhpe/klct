@@ -130,7 +130,7 @@ def check_LDAP_suffix(conn, base_dn):
     """
     assert conn.closed is not True
     #print(conn)
-    if conn.search(search_base=base_dn, '(cn=admin)') is True:
+    if conn.search(search_base=base_dn, search_filter='(cn=admin)') is True:
         return {'exit_status': 1, 'message': "The given base DN is correct"}
     else:
         return {'exit_status': 0, 'message': "The given base DN is not correct"}
