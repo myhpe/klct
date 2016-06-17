@@ -11,7 +11,7 @@ def check_valid_IP(host_name):
     """Checks if the given hostName is a valid IP address.
     Return 1 if valid, 0 if invalid.
     note: only checks for valid ipv4 IPs
-          need to implement validation for URLs and IPV6
+          need to implement validation for IPV6
     """
     try:
         socket.inet_aton(host_name)
@@ -104,7 +104,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """
     conn_info = setup_connection(host_name, port_number, "", "", 'n', "")
     if conn_info['exit_status'] == 1:
-        conn_info['conn'].unbind()
+        #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
 
@@ -114,7 +114,7 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     """
     conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
     if conn_info['exit_status'] == 1:
-        conn_info['conn'].unbind()
+        #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
 
