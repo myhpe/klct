@@ -103,7 +103,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """Attempts to connect to the provided hostName and port number, default port is 389 if none provided.
     """
     conn_info = setup_connection(host_name, port_number, "", "", 'n', "")
-    if conn_info['exit_status'] == 1:
+    #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
@@ -113,7 +113,7 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     Note: tls not working
     """
     conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
-    if conn_info['exit_status'] == 1:
+    #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
@@ -136,25 +136,25 @@ def check_LDAP_suffix(conn, base_dn):
         return {'exit_status': 0, 'message': "The given base DN is not correct"}
 
 
-def list_user_related_OC(conn, base_dn, user_name):
+def list_user_related_OC(conn, base_dn, user_id_attribute):
     """Returns a list of the object classes related to the given user.
     """
     assert conn.closed is not True
     search_filter = create_filter()
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+    if conn.search(search_base=base_dn, search_filter='('+user_id_attribute+'=*)', attributes=['objectclass']) is True:
         return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     else:
         return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_users(conn, base_dn, user_name, limit):
+def list_users(conn, base_dn, object_class, limit):
     """Lists the users, up to the limit
     """
     assert conn.closed is not True
     if limit is None:
         limit = 3
     search_filter = create_filter()
-    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+    if conn.search(search_base=user_name + ',' + base_dn, search_filter='&(('+object_class+')('+user_id_attribute+'=*))', attributes=[], size_limit=limit) is True:
         return {'exit_status': 1, 'users': conn.entries}
     else:
         return {'exit_status': 0, 'users': None}
