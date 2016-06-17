@@ -4,7 +4,6 @@ import subprocess
 import socket
 import sys
 import ldap3
-import ConfigParser
 from ldap3 import Server, Connection, ALL
 
 
@@ -15,22 +14,15 @@ def check_valid_IP(host_name):
           need to implement validation for IPV6
     """
     try:
-        host_name = socket.gethostbyname(host_name)
-        try:
-            socket.inet_aton(host_name)
-            return 1
-        except socket.error:
-            try:
-                socket.inet_pton(socket.AF_INET6, host_name)
-                return 1
-            except OSError:
-                return 0
-    except socket.gaierror:
-        try:
-            socket.inet_pton(socket.AF_INET6, host_name)
-            return 1
-        except socket.error:
-            return 0
+        socket.inet_aton(host_name)
+        return 1
+    except socket.error:
+        pass
+    try:
+        socket.inet_pton(socket.AF_INET6, host_name)
+        return 1
+    except socket.error:
+        return 0
 
 
 def setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):
@@ -51,18 +43,18 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
             return_values['server'] = Server(host_name, port=port_number, use_ssl=True, tls=tls_object, get_info=ALL)
         #print("\nTrying to connect...")
         #print(server)
-        return_values['conn'] = Connection(return_values['server'], version=3, user=user_name, password=password, auto_bind=True)
+        return_values['conn'] = Connection(return_values['server'], version=3, user=user_name, password=password)
         #print("connection started")
         #conn.open() #bind implies open
-        #if not conn.bind():
-        #    return 0, "bind failed", conn.results
+        if not return_values['conn'].bind():
+            return 0, "bind failed", return_values['conn'].results
         if want_tls == 'y':
             #print("starting tls\n")
             #conn.open()
             return_values['conn'].start_tls()
         #print(conn)
         return_values['exit_status'] = 1
-        return_values['message'] = "Successfully connected"
+        return_values['message'] = "Successfully connected!"
     except ldap3.LDAPSocketOpenError as err:
         return_values['message'] = "Failed to connect due to invalid socket."
         return_values['error'] = err
@@ -88,10 +80,16 @@ def create_filter():
 def ping_LDAP_server(host_name):
     """Checks if the given hostName is valid, and pings it.
     """
+    try:
+        host_name = socket.gethostbyname(host_name)
+    except socket.gaierror:
+        pass
+
     is_valid = check_valid_IP(host_name)
     if not is_valid:
         return -1
     response = None
+
     with open(os.devnull, "w"):
         try:
             subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
@@ -131,7 +129,8 @@ def check_LDAP_suffix(conn, base_dn):
     """Checks that the given base_dn is the correct suffix for the given connection
     """
     assert conn.closed is not True
-    if conn.search(search_base=base_dn, search_filter='(cn=admin)') is True:
+    #print(conn)
+    if conn.search(search_base=base_dn, '(cn=admin)') is True:
         return {'exit_status': 1, 'message': "The given base DN is correct"}
     else:
         return {'exit_status': 0, 'message': "The given base DN is not correct"}
