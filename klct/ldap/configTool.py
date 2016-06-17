@@ -14,7 +14,6 @@ def check_valid_IP(host_name):
           need to implement validation for IPV6
     """
     try:
-<<<<<<< HEAD
         socket.inet_aton(host_name)
         return 1
     except socket.error:
