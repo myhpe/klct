@@ -11,9 +11,10 @@ def check_valid_IP(host_name):
     """Checks if the given hostName is a valid IP address.
     Return 1 if valid, 0 if invalid.
     note: only checks for valid ipv4 IPs
-          need to implement validation for URLs and IPV6
+          need to implement validation for IPV6
     """
     try:
+<<<<<<< HEAD
         socket.inet_aton(host_name)
         return 1
     except socket.error:
