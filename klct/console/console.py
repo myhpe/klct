@@ -331,20 +331,45 @@ def menu_get_server_info(screen):
     screen.clear()
     screen_dims = screen.getmaxyx()
     if console_log["conn_info"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found.")
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
+        display_menu(screen)
     else:
         conn_info = console_log["conn_info"]
         server = conn_info["server"]
         server_info_dict = configTool.retrieve_server_info(server)
         server_info = server_info_dict["info"]
         server_info_str = str(server_info)
-        screen.addstr(0,0, server_info_str)
-        screen.getch()
+        num_spaces = [" "]*(screen_dims[1]/2 - 8)
+        str_spaces = ''.join(num_spaces)
+        screen.addstr(0,0, server_info_str + "\n" + str_spaces + "Press m to go to the menu.")
+        c = screen.getch()
+        while c not in (110, 109):
+            c = screen.getch()
+        if c == 110:
+            display_menu(screen)
+
 
 
 def menu_check_ldap_suffix(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen.clear()
+    screen_dims = screen.getmaxyx()
+    if console_log["conn_info"] == "none":
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
+        screen.getch()
+        display_menu(screen)
+    else:
+        conn_info = console_log["conn_info"]
+        conn = conn_info['conn']
+        prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
+        base_dn = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - len(prompt_str)/2, prompt_str)
+        results = configTool.check_LDAP_suffix(conn, base_dn)
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
+        c = screen.getch()
+        while c not in (110, 109):
+            c = screen.getch()
+        if c == 110:
+            display_menu(screen)
 
 
 def menu_show_list_user_object_classes(screen):
@@ -445,6 +470,8 @@ def display_menu(screen):
                 menu_check_ldap_connection_adv(screen)
             elif option_num == 3:
                 menu_get_server_info(screen)
+            elif option_num == 4:
+                menu_check_ldap_suffix(screen)
             elif option_num == 14:
                 sys.exit(0)
             else:
