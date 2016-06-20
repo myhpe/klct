@@ -83,7 +83,7 @@ def create_filter(attributes, num_attributes):
     elif num_attributes is 2:
         return '(&(objectclass='+attributes[0]+')('+attributes[1]+'=*))'
     elif num_attributes is 3:
-        return '(&(&(cn='+attributes[0]+'))(objectclass='+attributes[1]+')('+attributes[2]+'=*))'
+        return '(&(&('+attributes[0]+'='+attributes[1]+'))(objectclass='+attributes[2]+')('+attributes[3]+'=*))'
 
 
 def ping_LDAP_server(host_name):
@@ -169,11 +169,11 @@ def list_users(conn, base_dn, user_id_attribute, objectclass, limit):
         return {'exit_status': 0, 'users': None}
 
 
-def get_user(conn, base_dn, user_id_attribute, objectclass, name):
+def get_user(conn, base_dn, user_id_attribute, objectclass, user_name_attribute, name):
     """Returns a specific user.
     """
     assert conn.closed is not True
-    search_filter = create_filter([name, objectclass, user_id_attribute], 3)
+    search_filter = create_filter([user_name_attribute, name, objectclass, user_id_attribute], 3)
     if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
         return {'exit_status': 1, 'user': conn.entries}
     else:
@@ -204,11 +204,11 @@ def list_groups(conn, base_dn, group_id_attribute, objectclass, limit):
         return {'exit_status': 0, 'groups': None}
 
 
-def get_group(conn, base_dn, group_id_attribute, objectclass, name):
+def get_group(conn, base_dn, group_id_attribute, objectclass, group_name_attribute, name):
     """Returns a specific group.
     """
     assert conn.closed is not True
-    search_filter = create_filter([name, objectclass, group_id_attribute], 3)
+    search_filter = create_filter([group_name_attribute, name, objectclass, group_id_attribute], 3)
     if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
         return {'exit_status': 1, 'group': conn.entries}
     else:
