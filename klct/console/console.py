@@ -47,7 +47,11 @@ menu_options = ["1. Enter/Validate LDAP Server IP",
 console_log = {"ip_address": "none",
                "conn_info": "none",
                "base_dn": "none",
-               "user_name": "none"
+               "user": "none",
+               "password": "none",
+               "user_id_attribute": "none",
+               "user_name_attribute": "none",
+               "user_object_class": "none"
                }
 
 
@@ -67,7 +71,7 @@ def show_instructions(screen):
     screen.clear()
     screen.box()
     screen.refresh()
-    main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1]/4, 1, 1)
+    main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1]/4 - 1, 1, 1)
     main_window.keypad(True)
     display_menu(main_window, status_window)
 
@@ -150,9 +154,9 @@ def menu_ping_ldap_ip(screen):
     success = "Successfully pinged given IP address."
     fail = "Unsuccessfully pinged given IP address."
     screen.clear()
-    temp_char = 0
     screen_dims = screen.getmaxyx()
 
+    temp_char = 0
     ip_string = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 23,
                              "Please Enter the IP Address of the LDAP server.")
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
@@ -357,6 +361,8 @@ def menu_get_server_info(screen):
         screen.getch()
         display_menu(screen, status_window)
     else:
+        menu_options[3] = u"4. Get Server Information ✓"
+        menu_color[3] = curses.color_pair(7)
         conn_info = console_log["conn_info"]
         server = conn_info["server"]
         server_info_dict = configTool.retrieve_server_info(server)
@@ -388,6 +394,8 @@ def menu_check_ldap_suffix(screen):
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
         if results["exit_status"] == 1:
             console_log["base_dn"] = base_dn
+            menu_options[4] = u"5. Check LDAP Suffix ✓"
+            menu_color[4] = curses.color_pair(7)
         c = screen.getch()
         while c not in (110, 109):
             c = screen.getch()
@@ -396,7 +404,22 @@ def menu_check_ldap_suffix(screen):
 
 
 def menu_show_list_user_object_classes(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen.clear()
+    screen_dims = screen.getmaxyx()
+    if console_log["conn_info"] == "none" or console_log["base_dn"] == "none":
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
+        screen.getch()
+        display_menu(screen, status_window)
+    else:
+        conn_info = console_log["conn_info"]
+        conn = conn_info['conn']
+        base_dn = console_log["base_dn"]
+        user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2, "What is the user id attribute?")
+        console_log["user_id_attribute"] = user_id_attribute
+        return_values = configTool.list_user_related_OC(conn, base_dn, user_id_attribute)
+        if return_values['exit_status'] == 1:
+            screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, str(return_values['objectclasses']))
+        screen.getch()
 
 
 def menu_check_user_tree_dn_show_users(screen):
@@ -501,10 +524,12 @@ def display_menu(screen, status_window):
                 menu_get_server_info(screen)
             elif option_num == 4:
                 menu_check_ldap_suffix(screen)
+            elif option_num == 5:
+                menu_show_list_user_object_classes(screen)
             elif option_num == 14:
                 sys.exit(0)
             else:
-                display_menu(screen)
+                display_menu(screen, status_window)
     curses.curs_set(1)
 curses.wrapper(show_instructions)
 curses.endwin()
