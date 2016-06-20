@@ -5,6 +5,7 @@ import socket
 import sys
 import ldap3
 from ldap3 import Server, Connection, ALL
+import yaml
 
 
 def check_valid_IP(host_name):
@@ -73,8 +74,16 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
     return return_values
 
 
-def create_filter():
-    return "filter goes here"
+def create_filter(attributes, num_attributes):
+    """Returns a filter based on the number of attributes we want filtered.
+    todo: add more number of attributes (currently only handles 3)
+    """
+    if num_attributes is 1:
+        return '('+attributes[0]+'=*)'
+    elif num_attributes is 2:
+        return '(&(objectclass='+attributes[0]+')('+attributes[1]+'=*))'
+    elif num_attributes is 3:
+        return '(&(&(cn='+attributes[0]+'))(objectclass='+attributes[1]+')('+attributes[2]+'=*))'
 
 
 def ping_LDAP_server(host_name):
@@ -103,7 +112,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """Attempts to connect to the provided hostName and port number, default port is 389 if none provided.
     """
     conn_info = setup_connection(host_name, port_number, "", "", 'n', "")
-    if conn_info['exit_status'] == 1:
+    #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
@@ -113,78 +122,107 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     Note: tls not working
     """
     conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
-    if conn_info['exit_status'] == 1:
+    #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
 
 def retrieve_server_info(server):
-    """Retrieves the information related to the server passed in
+    """Retrieves the information related to the server passed in.
     """
     dict = {'info': server.info, 'schema': server.schema}
     return dict
 
 
 def check_LDAP_suffix(conn, base_dn):
-    """Checks that the given base_dn is the correct suffix for the given connection
+    """Checks that the given base_dn is the correct suffix for the given connection.
     """
     assert conn.closed is not True
-    #print(conn)
-    if conn.search(search_base=base_dn, search_filter='(cn=admin)') is True:
+    search_filter = create_filter(['cn'], 1)
+    if conn.search(search_base=base_dn, search_filter=search_filter) is True:
         return {'exit_status': 1, 'message': "The given base DN is correct"}
     else:
         return {'exit_status': 0, 'message': "The given base DN is not correct"}
 
 
-def list_user_related_OC(conn, base_dn, user_name):
+def list_user_related_OC(conn, base_dn, user_id_attribute):
     """Returns a list of the object classes related to the given user.
     """
     assert conn.closed is not True
-    search_filter = create_filter()
+    search_filter = create_filter([user_id_attribute], 1)
     if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
         return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     else:
         return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_users(conn, base_dn, user_name, limit):
-    """Lists the users, up to the limit
+def list_users(conn, base_dn, user_id_attribute, objectclass, limit):
+    """Lists the users, up to the limit.
     """
     assert conn.closed is not True
     if limit is None:
         limit = 3
-    search_filter = create_filter()
-    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+    search_filter = create_filter([objectclass, user_id_attribute], 2)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
         return {'exit_status': 1, 'users': conn.entries}
     else:
         return {'exit_status': 0, 'users': None}
 
 
-def get_user(conn, base_dn, user_name, name):
-    """Returns a specific user
+def get_user(conn, base_dn, user_id_attribute, objectclass, name):
+    """Returns a specific user.
     """
     assert conn.closed is not True
-    search_filter = create_filter()
-    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[]) is True:
+    search_filter = create_filter([name, objectclass, user_id_attribute], 3)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
         return {'exit_status': 1, 'user': conn.entries}
     else:
         return {'exit_status': 0, 'user': None}
 
-def list_group_related_OC():
-    print("needs to be implemented")
+
+def list_group_related_OC(conn, base_dn, group_id_attribute):
+    """Returns a list of object classes related to the given group.
+    """
+    assert conn.closed is not True
+    search_filter = create_filter([group_id_attribute], 1)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+        return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+    else:
+        return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_groups():
-    print("needs to be implemented")
+def list_groups(conn, base_dn, group_id_attribute, objectclass, limit):
+    """Returns a list of groups, up to a limit.
+    """
+    assert conn.closed is not True
+    if limit is None:
+        limit = 3
+    search_filter = create_filter([objectclass, group_id_attribute], 2)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+        return {'exit_status': 1, 'groups': conn.entries}
+    else:
+        return {'exit_status': 0, 'groups': None}
 
 
-def get_group():
-    print("needs to be implemented")
+def get_group(conn, base_dn, group_id_attribute, objectclass, name):
+    """Returns a specific group.
+    """
+    assert conn.closed is not True
+    search_filter = create_filter([name, objectclass, group_id_attribute], 3)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
+        return {'exit_status': 1, 'group': conn.entries}
+    else:
+        return {'exit_status': 0, 'group': None}
 
 
 def show_config():
     print("needs to be implemented")
 
 
-def save_config():
-    print("needs to be implemented")
+def save_config(data, path):
+    try:
+        fil = open(path, 'w')
+    except:
+        return {'exit_status': 0, 'message': "Unable to open file specified"}
+    yaml.dump({'ldap': data}, fil, default_flow_style=False)
+    return {'exit_status': 1, 'message': "Data successfully dumped"}
