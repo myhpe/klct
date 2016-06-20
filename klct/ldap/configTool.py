@@ -137,82 +137,96 @@ def retrieve_server_info(server):
 def check_LDAP_suffix(conn, base_dn):
     """Checks that the given base_dn is the correct suffix for the given connection.
     """
-    assert conn.closed is not True
-    search_filter = create_filter(['cn'], 1)
-    if conn.search(search_base=base_dn, search_filter=search_filter) is True:
-        return {'exit_status': 1, 'message': "The given base DN is correct"}
-    else:
-        return {'exit_status': 0, 'message': "The given base DN is not correct"}
+    try:
+        assert conn.closed is not True
+        search_filter = create_filter(['cn'], 1)
+        if conn.search(search_base=base_dn, search_filter=search_filter) is True:
+            return {'exit_status': 1, 'message': "The given base DN is correct"}
+    except:
+        pass    
+    return {'exit_status': 0, 'message': "The given base DN is not correct"}
 
 
-def list_user_related_OC(conn, base_dn, user_id_attribute):
+def list_user_related_OC(conn, user_dn, user_id_attribute):
     """Returns a list of the object classes related to the given user.
     """
-    assert conn.closed is not True
-    search_filter = create_filter([user_id_attribute], 1)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
-        return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
-    else:
-        return {'exit_status': 0, 'objectclasses': None}
+    try:
+        assert conn.closed is not True
+        search_filter = create_filter([user_id_attribute], 1)
+        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+    except:
+        pass    
+    return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_users(conn, base_dn, user_id_attribute, objectclass, limit):
+def list_users(conn, user_dn, user_id_attribute, objectclass, limit):
     """Lists the users, up to the limit.
     """
-    assert conn.closed is not True
-    if limit is None:
-        limit = 3
-    search_filter = create_filter([objectclass, user_id_attribute], 2)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
-        return {'exit_status': 1, 'users': conn.entries}
-    else:
-        return {'exit_status': 0, 'users': None}
+    try:
+        assert conn.closed is not True
+        if limit is None:
+            limit = 3
+        search_filter = create_filter([objectclass, user_id_attribute], 2)
+        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+            return {'exit_status': 1, 'users': conn.entries}
+    except:
+        pass
+    return {'exit_status': 0, 'users': None}
 
 
-def get_user(conn, base_dn, user_id_attribute, objectclass, user_name_attribute, name):
+def get_user(conn, user_dn, user_id_attribute, objectclass, user_name_attribute, name):
     """Returns a specific user.
     """
-    assert conn.closed is not True
-    search_filter = create_filter([user_name_attribute, name, objectclass, user_id_attribute], 3)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
-        return {'exit_status': 1, 'user': conn.entries}
-    else:
-        return {'exit_status': 0, 'user': None}
+    try:
+        assert conn.closed is not True
+        search_filter = create_filter([user_name_attribute, name, objectclass, user_id_attribute], 3)
+        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[]) is True:
+            return {'exit_status': 1, 'user': conn.entries}
+    except:
+        pass
+    return {'exit_status': 0, 'user': None}
 
 
-def list_group_related_OC(conn, base_dn, group_id_attribute):
+def list_group_related_OC(conn, group_dn, group_id_attribute):
     """Returns a list of object classes related to the given group.
     """
-    assert conn.closed is not True
-    search_filter = create_filter([group_id_attribute], 1)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
-        return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
-    else:
-        return {'exit_status': 0, 'objectclasses': None}
+    try:
+        assert conn.closed is not True
+        search_filter = create_filter([group_id_attribute], 1)
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+    except:
+        pass
+    return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_groups(conn, base_dn, group_id_attribute, objectclass, limit):
+def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
     """Returns a list of groups, up to a limit.
     """
-    assert conn.closed is not True
-    if limit is None:
-        limit = 3
-    search_filter = create_filter([objectclass, group_id_attribute], 2)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
-        return {'exit_status': 1, 'groups': conn.entries}
-    else:
-        return {'exit_status': 0, 'groups': None}
+    try:
+        assert conn.closed is not True
+        if limit is None:
+            limit = 3
+        search_filter = create_filter([objectclass, group_id_attribute], 2)
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+            return {'exit_status': 1, 'groups': conn.entries}
+    except:
+        pass
+    return {'exit_status': 0, 'groups': None}
 
 
-def get_group(conn, base_dn, group_id_attribute, objectclass, group_name_attribute, name):
+def get_group(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name):
     """Returns a specific group.
     """
-    assert conn.closed is not True
-    search_filter = create_filter([group_name_attribute, name, objectclass, group_id_attribute], 3)
-    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[]) is True:
-        return {'exit_status': 1, 'group': conn.entries}
-    else:
-        return {'exit_status': 0, 'group': None}
+    try:
+        assert conn.closed is not True
+        search_filter = create_filter([group_name_attribute, name, objectclass, group_id_attribute], 3)
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[]) is True:
+            return {'exit_status': 1, 'group': conn.entries}
+    except:
+        pass
+    return {'exit_status': 0, 'group': None}
 
 
 def show_config():
