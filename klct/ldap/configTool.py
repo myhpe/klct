@@ -74,8 +74,14 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
     return return_values
 
 
-def create_filter():
-    return "filter goes here"
+def create_filter(attributes, num_attributes):
+    """Returns a filter based on the number of attributes we want filtered
+    todo: add more number of attributes (currently only handles 2)
+    """
+    if num_attributes is 1:
+        return '('+attributes[0]+'=*)',
+    elif num_attributes is 2:
+        return '&(('+attributes[0]+')('attribute[1]+'=*))',
 
 
 def ping_LDAP_server(host_name):
@@ -130,8 +136,8 @@ def check_LDAP_suffix(conn, base_dn):
     """Checks that the given base_dn is the correct suffix for the given connection
     """
     assert conn.closed is not True
-    #print(conn)
-    if conn.search(search_base=base_dn, search_filter='(cn=admin)') is True:
+    search_filter=create_filter(["cn=admin"], 1)
+    if conn.search(search_base=base_dn, search_filter=search_filter is True:
         return {'exit_status': 1, 'message': "The given base DN is correct"}
     else:
         return {'exit_status': 0, 'message': "The given base DN is not correct"}
@@ -141,32 +147,32 @@ def list_user_related_OC(conn, base_dn, user_id_attribute):
     """Returns a list of the object classes related to the given user.
     """
     assert conn.closed is not True
-    search_filter = create_filter()
-    if conn.search(search_base=base_dn, search_filter='('+user_id_attribute+'=*)', attributes=['objectclass']) is True:
+    search_filter = create_filter([user_id_attribute], 1)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=['objectclass']) is True:
         return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     else:
         return {'exit_status': 0, 'objectclasses': None}
 
 
-def list_users(conn, base_dn, object_class, limit):
+def list_users(conn, base_dn, object_class, user_id_attribute, limit):
     """Lists the users, up to the limit
     """
     assert conn.closed is not True
     if limit is None:
         limit = 3
-    search_filter = create_filter()
-    if conn.search(search_base=user_name + ',' + base_dn, search_filter='&(('+object_class+')('+user_id_attribute+'=*))', attributes=[], size_limit=limit) is True:
+    search_filter = create_filter([object_class, user_id_attribute], 2)
+    if conn.search(search_base=base_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
         return {'exit_status': 1, 'users': conn.entries}
     else:
         return {'exit_status': 0, 'users': None}
 
 
-def get_user(conn, base_dn, user_name, name):
+def get_user(conn, base_dn, user_id_attribute, name):
     """Returns a specific user
     """
     assert conn.closed is not True
-    search_filter = create_filter()
-    if conn.search(search_base=user_name + ',' + base_dn, search_filter=search_filter, attributes=[]) is True:
+    search_filter = create_filter([user_id_attribute], 1)
+    if conn.search(base_dn, search_filter=search_filter, attributes=[]) is True:
         return {'exit_status': 1, 'user': conn.entries}
     else:
         return {'exit_status': 0, 'user': None}
