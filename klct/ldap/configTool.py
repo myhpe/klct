@@ -5,6 +5,7 @@ import socket
 import sys
 import ldap3
 from ldap3 import Server, Connection, ALL
+import yaml
 
 
 def check_valid_IP(host_name):
@@ -186,5 +187,11 @@ def show_config():
     print("needs to be implemented")
 
 
-def save_config():
-    print("needs to be implemented")
+def save_config(data, path):
+    try:
+        fil = open(path, 'w')
+    except:
+        return {'exit_status': 0, 'message': "Unable to open file specified"}
+    yaml.dump({'ldap': data}, fil, default_flow_style=False)
+    return {'exit_status': 1, 'message': "Data successfully dumped"}
+
