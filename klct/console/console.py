@@ -25,8 +25,8 @@ curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
 term_screen.bkgd(curses.color_pair(1))
-status_window = term_screen.subwin(term_screen_dimensions[0] - 2, term_screen_dimensions[1] / 2 - 2, 1,
-                                   term_screen_dimensions[1] / 2)
+status_window = term_screen.subwin(term_screen_dimensions[0] - 2, term_screen_dimensions[1] / 4 - 2, 1,
+                                   term_screen_dimensions[1] - term_screen_dimensions[1]/4 )
 
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
 menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
@@ -67,7 +67,7 @@ def show_instructions(screen):
     screen.clear()
     screen.box()
     screen.refresh()
-    main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] / 2 - 2, 1, 1)
+    main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1]/4, 1, 1)
     main_window.keypad(True)
     display_menu(main_window, status_window)
 
@@ -140,7 +140,7 @@ def show_console_in_status_window():
     status_window_dimensions = status_window.getmaxyx()
     stat_win_half_y = status_window_dimensions[0]/2
     stat_win_half_x = status_window_dimensions[1]/2
-    status_window.addstr(stat_win_half_y, stat_win_half_x, "IP Address: " + str(console_log["ip_address"]))
+    status_window.addstr(stat_win_half_y, stat_win_half_x - 8, "IP Address: " + str(console_log["ip_address"]))
     status_window.addstr(stat_win_half_y + 1, stat_win_half_x, "")
 
 

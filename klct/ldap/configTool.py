@@ -104,7 +104,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """
     conn_info = setup_connection(host_name, port_number, "", "", 'n', "")
     if conn_info['exit_status'] == 1:
-        pass #conn_info['conn'].unbind() front end will unbind for now
+        #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
 
@@ -114,7 +114,7 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     """
     conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
     if conn_info['exit_status'] == 1:
-        pass #conn_info['conn'].unbind() front end will unbind for now
+        #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
 
 
