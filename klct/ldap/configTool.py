@@ -210,7 +210,7 @@ def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
             limit = 3
         search_filter = create_filter([objectclass, group_id_attribute], 2)
         if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[group_id_attribute], size_limit=limit) is True:
-            return {'exit_status': 1, 'groups': conn.entries[0].organizationalunit}
+            return {'exit_status': 1, 'groups': conn.entries}
     except:
         pass
     return {'exit_status': 0, 'groups': None}
