@@ -14,11 +14,20 @@ class TestConfigTool(unittest.TestCase):
     bad_user_name = "not a user"
     bad_password = "wrong password"
     bad_port = "invalid_port"
+
     AD_server = "10.1.31.0"
     AD_user = "LdapQuery"
     AD_pass = "hpcsqa50"
-    AD_base_dn = "dc=cdl,dc=hp,dc=com"
-    AD_bad_dn = "dc=hello,dc=hp,dc=com"
+    AD_base_dn = "dc=keystone,dc=cdl,dc=hp,dc=com"
+    AD_bad_dn = "dc=cdl,dc=hp,dc=com"
+    AD_user_objectclass = "user"
+    AD_user_id_attribute = "cn"
+
+    OpenLdap_server = "10.1.56.3"
+    OpenLdap_base_dn = "dc=cdl,dc=hp,dc=com"
+    OpenLdap_bad_dn = "dc=hi,dc=hp,dc=com"
+    OpenLdap_user_objectclass = "posixAccount"
+    OpenLdap_user_id_attribute = "uid"
 
     """pingLDAPserver() tests"""
     def test_ping_invalid_host_name(self):
@@ -95,14 +104,30 @@ class TestConfigTool(unittest.TestCase):
 
     """check_LDAP_suffix tests"""
     def test_check_good_LDAP_suffix(self):
-        connection = configTool.setup_connection(self.AD_server, None, "", "", 'n', "")
+        connection = configTool.setup_connection(self.AD_server, None, "LdapQuery", "hpcsqa50", 'n', "")
         self.assertEqual(configTool.check_LDAP_suffix(connection['conn'], self.AD_base_dn)['exit_status'], 1)
         connection['conn'].unbind()
 
     def test_check_bad_LDAP_suffix(self):
-        connection = configTool.setup_connection(self.AD_server, None, "", "", 'n', "")
+        connection = configTool.setup_connection(self.AD_server, None, "LdapQuery", "hpcsqa50", 'n', "")
         self.assertEqual(configTool.check_LDAP_suffix(connection['conn'], self.AD_bad_dn)['exit_status'], 0)
         connection['conn'].unbind()
+
+    """list_user_related_OC tests"""
+    def test_list_AD_user_related_OC(self):
+        connection = configTool.setup_connection(self.AD_server, None, "LdapQuery", "hpcsqa50", 'n', "")
+        results = configTool.list_user_related_OC(connection['conn'], self.AD_base_dn, self.AD_user_id_attribute)
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['objectclasses'], self.AD_user_objectclass)
+        connection['conn'].unbind()
+    
+    def test_list_OpenLdap_user_related_OC(self):
+        connection = configTool.setup_connection(self.OpenLdap_server, None, "", "", 'n', "")
+        results = configTool.list_user_related_OC(connection['conn'], self.OpenLdap_base_dn, self.OpenLdap_user_id_attribute)
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['objectclasses'], self.OpenLdap_user_objectclass)
+        connection['conn'].unbind()
+    
 
 if __name__ == '__main__':
     unittest.main()
