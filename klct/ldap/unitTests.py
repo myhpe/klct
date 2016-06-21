@@ -188,6 +188,6 @@ class TestConfigTool(unittest.TestCase):
         results = configTool.get_group(self.openLdap['conn'], self.OpenLdap_group_dn, self.OpenLdap_group_id_attribute, self.OpenLdap_group_objectclass, self.OpenLdap_group_name_attribute, "testgroup1")
         self.assertEqual(results['exit_status'], 1)
         self.assertEqual(results['group'][0].cn, "testgroup1") #OpenLdap_group_name_attribute
-
+        
 if __name__ == '__main__':
     unittest.main()
