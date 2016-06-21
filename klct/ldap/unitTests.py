@@ -20,7 +20,7 @@ class TestConfigTool(unittest.TestCase):
     AD_pass = "hpcsqa50"
     AD_base_dn = "dc=keystone,dc=cdl,dc=hp,dc=com"
     AD_user_dn = "ou=UsersTest,dc=keystone,dc=cdl,dc=hp,dc=com"
-    AD_group_dn = "cn=Users,dc=keystone,dc=cdl,dc=hp,dc=com"
+    AD_group_dn = "ou=UsersTest,dc=keystone,dc=cdl,dc=hp,dc=com"
     AD_bad_dn = "dc=cdl,dc=hp,dc=com"
     AD_user_objectclass = "user"
     AD_group_objectclass = "group"
@@ -133,7 +133,29 @@ class TestConfigTool(unittest.TestCase):
         results = configTool.list_user_related_OC(self.openLdap['conn'], self.OpenLdap_user_dn, self.OpenLdap_user_id_attribute)
         self.assertEqual(results['exit_status'], 1)
         self.assertEqual(results['objectclasses'], self.OpenLdap_user_objectclass)
-    
+     
+    """list_users tests"""
+    def test_list_AD_users_5(self):
+        results = configTool.list_users(self.ad['conn'], self.AD_user_dn, self.AD_user_id_attribute, self.AD_user_objectclass, 5)
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['users'][0].cn, "testuser1") #AD_user_id_attribute
+
+    def test_list_OpenLdap_users_5(self):
+        results = configTool.list_users(self.openLdap['conn'], self.OpenLdap_user_dn, self.OpenLdap_user_id_attribute, self.OpenLdap_user_objectclass, 5)
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['users'][0].uid, "testuser1") #OpenLdap_user_id_attribute
+
+    """get_user tests"""
+    def test_get_user_AD(self):
+        results = configTool.get_user(self.ad['conn'], self.AD_user_dn, self.AD_user_id_attribute, self.AD_user_objectclass, self.AD_user_name_attribute, "testuser1")
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['user'][0].sAMAccountName, "testuser1") #AD_user_name_attribute
+
+    def test_get_user_OpenLdap(self):
+        results = configTool.get_user(self.openLdap['conn'], self.OpenLdap_user_dn, self.OpenLdap_user_id_attribute, self.OpenLdap_user_objectclass, self.OpenLdap_user_name_attribute, "testuser1")
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['user'][0].cn, "testuser1") #OpenLdap_user_name_attribute
+
     """list_group_related_OC tests"""
     def test_list_AD_group_related_OC(self):
         results = configTool.list_group_related_OC(self.ad['conn'], self.AD_group_dn, self.AD_group_id_attribute)
@@ -144,18 +166,28 @@ class TestConfigTool(unittest.TestCase):
         results = configTool.list_group_related_OC(self.openLdap['conn'], self.OpenLdap_group_dn, self.OpenLdap_group_id_attribute)
         self.assertEqual(results['exit_status'], 1)
         self.assertEqual(results['objectclasses'], self.OpenLdap_group_objectclass)
-    
-    """list_users tests"""
-    def test_list_AD_users_5(self):
-        results = configTool.list_users(self.ad['conn'], self.AD_user_dn, self.AD_user_id_attribute, self.AD_user_objectclass, 5)
-        self.assertEqual(results['exit_status'], 1)
-        self.assertEqual(results['users'][0].cn, "testuser1")
 
-    def test_list_OpenLdap_users_5(self):
-        results = configTool.list_users(self.openLdap['conn'], self.OpenLdap_user_dn, self.OpenLdap_user_id_attribute, self.OpenLdap_user_objectclass, 5)
+    """list_group tests"""
+    def test_list_AD_groups_5(self):
+        results = configTool.list_groups(self.ad['conn'], self.AD_group_dn, self.AD_group_id_attribute, self.AD_group_objectclass, 5)
         self.assertEqual(results['exit_status'], 1)
-        self.assertEqual(results['users'][0].uid, "testuser1")
+        self.assertEqual(results['groups'][0].cn, "testgroup1") #AD_group_id_attribute
 
+    def test_list_OpenLdap_groups_5(self):
+        results = configTool.list_groups(self.openLdap['conn'], self.OpenLdap_group_dn, self.OpenLdap_group_id_attribute, self.OpenLdap_group_objectclass, 5)
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['groups'][0].cn, "testgroup1") #OpenLdap_group_id_attribute
+
+    """get_group tests"""
+    def test_get_group_AD(self):
+        results = configTool.get_group(self.ad['conn'], self.AD_group_dn, self.AD_group_id_attribute, self.AD_group_objectclass, self.AD_group_name_attribute, "testgroup1")
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['group'][0].sAMAccountName, "testgroup1") #AD_group_name_attribute
+
+    def test_get_group_OpenLdap(self):
+        results = configTool.get_group(self.openLdap['conn'], self.OpenLdap_group_dn, self.OpenLdap_group_id_attribute, self.OpenLdap_group_objectclass, self.OpenLdap_group_name_attribute, "testgroup1")
+        self.assertEqual(results['exit_status'], 1)
+        self.assertEqual(results['group'][0].cn, "testgroup1") #OpenLdap_group_name_attribute
 
 if __name__ == '__main__':
     unittest.main()
