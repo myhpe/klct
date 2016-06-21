@@ -3,6 +3,7 @@ import curses
 import locale
 import os.path
 import sys
+import yaml
 import string
 sys.path.insert(0, '../ldap')
 import configTool
@@ -44,7 +45,7 @@ menu_options = ["1. Enter/Validate LDAP Server IP",
                 "12. Add Additional Configuration Options",
                 "13. Show Configuration",
                 "14. Save/Create Configuration File"]
-console_log = {"ip_address": "none",
+configuration_dict = {"ip_address": "none",
                "conn_info": "none",
                "base_dn": "none",
                "user": "none",
@@ -159,7 +160,7 @@ def ip_not_exists(screen, screen_dims):
 
 
 def basic_ldap_menu_success(screen, conn_info, screen_dims):
-    console_log["conn_info"] = conn_info
+    configuration_dict["conn_info"] = conn_info
     screen.addstr(screen_dims[0] / 2 - 6, screen_dims[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
@@ -190,7 +191,7 @@ def basic_ldap_menu_fail(screen, conn_info, screen_dims):
 
 
 def adv_ldap_setup_prompts(screen, max_yx):
-    host_ip = console_log["ip_address"]
+    host_ip = configuration_dict["ip_address"]
     temp_str = my_raw_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 22,
                             "Please enter the port number. Default is 389.")
     while not temp_str.isdigit():
@@ -230,7 +231,7 @@ def adv_ldap_setup_prompts(screen, max_yx):
 
 
 def adv_ldap_success(screen, conn_info, max_yx):
-    console_log["conn_info"] = conn_info
+    configuration_dict["conn_info"] = conn_info
     screen.addstr(max_yx[0] / 2 - 7, max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
@@ -269,7 +270,8 @@ def show_console_in_status_window():
     status_window_dimensions = status_window.getmaxyx()
     stat_win_half_y = status_window_dimensions[0]/2
     stat_win_half_x = status_window_dimensions[1]/2
-    status_window.addstr(0, 0, str(console_log))
+    configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
+    status_window.addstr(stat_win_half_y, 0, configuration_dict_yaml_str)
     status_window.addstr(stat_win_half_y + 1, stat_win_half_x, "")
 
 
@@ -297,7 +299,7 @@ def menu_ping_ldap_ip(screen):
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
-        console_log["ip_address"] = ip_string
+        configuration_dict["ip_address"] = ip_string
     elif temp_bool == -1:
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
                       "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
@@ -319,14 +321,14 @@ def menu_ping_ldap_ip(screen):
 def menu_check_ldap_connection_basic(screen):
     """The method that handles the 'Check Connections to LDAP Server' option."""
     screen_dims = setup_menu_call(screen)
-    if console_log["ip_address"] == "none":
+    if configuration_dict["ip_address"] == "none":
         ip_not_exists(screen, screen_dims)
     else:
         y_n = prompt_char_input(screen, screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 26,
                                 "Valid IP has been found, would you like to use this? [y/n]", ('y', 'n'))
         screen.clear()
         if y_n == 'y':
-            host_ip = console_log["ip_address"]
+            host_ip = confiuration_dict["ip_address"]
             temp_str = my_raw_input(screen, screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 22,
                                     "Please enter the port number. Default is 389.")
             while not temp_str.isdigit():
@@ -349,7 +351,7 @@ def menu_check_ldap_connection_basic(screen):
 
 def menu_check_ldap_connection_adv(screen):
     max_yx = setup_menu_call(screen)
-    if console_log["ip_address"] == "none":
+    if configuration_dict["ip_address"] == "none":
         ip_not_exists(screen, max_yx)
     else:
         y_n = prompt_char_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
@@ -379,7 +381,7 @@ def menu_get_server_info(screen):
     """Displays server information on screen.
     Currently needs fullscreen in order to print everything, but later will parse information."""
     screen_dims = setup_menu_call(screen)
-    if console_log["conn_info"] == "none":
+    if configuration_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.",
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
@@ -387,7 +389,7 @@ def menu_get_server_info(screen):
     else:
         menu_options[3] = u"4. Get Server Information ✓"
         menu_color[3] = curses.color_pair(7)
-        conn_info = console_log["conn_info"]
+        conn_info = configuration_dict["conn_info"]
         server = conn_info["server"]
         server_info_dict = configTool.retrieve_server_info(server)
         server_info = server_info_dict["info"]
@@ -404,19 +406,19 @@ def menu_get_server_info(screen):
 
 def menu_check_ldap_suffix(screen):
     screen_dims = setup_menu_call(screen)
-    if console_log["conn_info"] == "none":
+    if configuration_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
         display_menu(screen, status_window)
     else:
-        conn_info = console_log["conn_info"]
+        conn_info = configuration_dict["conn_info"]
         conn = conn_info['conn']
         prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
         base_dn = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - len(prompt_str)/2, prompt_str)
         results = configTool.check_LDAP_suffix(conn, base_dn)
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
         if results["exit_status"] == 1:
-            console_log["base_dn"] = base_dn
+            configuration_dict["base_dn"] = base_dn
             menu_options[4] = u"5. Check LDAP Suffix ✓"
             menu_color[4] = curses.color_pair(7)
         c = screen.getch()
@@ -428,16 +430,16 @@ def menu_check_ldap_suffix(screen):
 
 def menu_show_list_user_object_classes(screen):
     screen_dims = setup_menu_call(screen)
-    if console_log["conn_info"] == "none" or console_log["base_dn"] == "none":
+    if configuration_dict["conn_info"] == "none" or configuration_dict["base_dn"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
         display_menu(screen, status_window)
     else:
-        conn_info = console_log["conn_info"]
+        conn_info = configuration_dict["conn_info"]
         conn = conn_info['conn']
-        base_dn = console_log["base_dn"]
+        base_dn = configuration_dict["base_dn"]
         user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2, "What is the user id attribute?")
-        console_log["user_id_attribute"] = user_id_attribute
+        configuration_dict["user_id_attribute"] = user_id_attribute
         return_values = configTool.list_user_related_OC(conn, base_dn, user_id_attribute)
         if return_values['exit_status'] == 1:
             screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, str(return_values['objectclasses']))
