@@ -496,22 +496,67 @@ def menu_check_user_tree_dn_show_users(screen):
     object_class = "TEMPORARY"
     limit_prompt = "How many users would you like to see?"
     limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
-
+    configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    c = screen.getch()
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen,status_window)
 
 def menu_get_specific_user(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    user_dn = "?"
+    user_id_attribute = configuration_dict["user_id_attribute"]
+    object_class = "?"
+    user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
+    name = "?"
+    configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_show_list_group_object_classes(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_check_group_tree_dn_show_groups(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    object_class = "?"
+    limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
+    configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_get_specific_group(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    object_class = "?"
+    group_name_attribute = "?"
+    name = "?"
+    configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_additional_config_options(screen):
