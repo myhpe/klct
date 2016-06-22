@@ -168,7 +168,7 @@ def list_users(conn, user_dn, user_id_attribute, objectclass, limit):
         if limit is None:
             limit = 3
         search_filter = create_filter([objectclass, user_id_attribute], 2)
-        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[user_id_attribute], size_limit=limit) is True:
             return {'exit_status': 1, 'users': conn.entries}
     except:
         pass
@@ -181,7 +181,7 @@ def get_user(conn, user_dn, user_id_attribute, objectclass, user_name_attribute,
     try:
         assert conn.closed is not True
         search_filter = create_filter([user_name_attribute, name, objectclass, user_id_attribute], 3)
-        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[]) is True:
+        if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[user_id_attribute, user_name_attribute]) is True:
             return {'exit_status': 1, 'user': conn.entries}
     except:
         pass
@@ -209,7 +209,7 @@ def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
         if limit is None:
             limit = 3
         search_filter = create_filter([objectclass, group_id_attribute], 2)
-        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[], size_limit=limit) is True:
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[group_id_attribute], size_limit=limit) is True:
             return {'exit_status': 1, 'groups': conn.entries}
     except:
         pass
@@ -219,10 +219,11 @@ def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
 def get_group(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name):
     """Returns a specific group.
     """
+    print(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name)
     try:
         assert conn.closed is not True
         search_filter = create_filter([group_name_attribute, name, objectclass, group_id_attribute], 3)
-        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[]) is True:
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[group_id_attribute, group_name_attribute]) is True:
             return {'exit_status': 1, 'group': conn.entries}
     except:
         pass
