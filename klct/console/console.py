@@ -65,7 +65,8 @@ configuration_dict = {"url": "none",
                       "user_enabled_default": "none",
                       "use_tls": "none"
                }
-var_dict = {"conn_info": "none"}
+var_dict = {"conn_info": "none",
+            "object_class": "none"}
 
 """HELPER METHODS"""
 
@@ -148,6 +149,19 @@ def prompt_char_input(screen, y, x, prompt_string, list):
         ch_input = screen.getstr(y + 1, x + 1, 1)
     return ch_input
 
+
+def my_numb_input(screen, y, x, prompt_string):
+    curses.echo()
+    screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addch(y + 1, x, ">")
+    screen.refresh()
+    numb_input = screen.getstr(y + 1, x + 1, 10)
+    while not numb_input.isdigit():
+        screen.addstr(y, x, "                                                                  ")
+        screen.addstr(y + 1, x, ">                                 ")
+        screen.addstr(y, x, prompt_string, curses.color_pair(2))
+        numb_input = screen.getstr(y + 1, x + 1, 10)
+    return int(numb_input)
 
 def setup_menu_call(screen):
     """Typically called at start of a menu method.
@@ -309,7 +323,7 @@ def menu_ping_ldap_ip(screen):
                       "Press 'n' to move on to next step, or 'm' for menu.")
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
-        configuration_dict["url"] = ip_string
+        configuration_dict["url"] = "ldap://" + ip_string
     elif temp_bool == -1:
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
                       "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
@@ -435,6 +449,8 @@ def menu_check_ldap_suffix(screen):
             message_color = 3
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
                       curses.color_pair(message_color) | curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
+                    curses.A_BOLD)
         c = screen.getch()
         while c != (109):
             c = screen.getch()
@@ -452,16 +468,34 @@ def menu_show_list_user_object_classes(screen):
         conn_info = var_dict["conn_info"]
         conn = conn_info['conn']
         base_dn = configuration_dict["suffix"]
-        user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2, "What is the user id attribute?")
-        configuration_dict["user_id_attribute"] = user_id_attribute
-        return_values = configTool.list_user_related_OC(conn, base_dn, user_id_attribute)
+        user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 15,
+                                         "What is the user id attribute?")
+        configuration_dict["user_id_attribute"] = user_id_attribute # MAYBE VALIDATE USER INPUT?!
+        user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 -15,
+                                     "What is the user tree DN?") # MAYBE VALIDATE USER INPUT?
+        user_tree_dn = user_dn + configuration_dict["suffix"]
+        configuration_dict["user_tree_dn"] = user_tree_dn
+        return_values = configTool.list_user_related_OC(conn, user_tree_dn, user_id_attribute)
         if return_values['exit_status'] == 1:
-            screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, str(return_values['objectclasses']))
-        screen.getch()
-
+            menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
+            menu_color[5] = curses.color_pair(7)
+            screen.addstr(screen_dims[0]/2 + 6, screen_dims[1]/2 - 15, str(return_values['objectclasses']))
+        screen.addstr(screen_dims[0]/2 - 4, screen_dims[1]/2 - 13, "Press m to go to the menu.",
+                      curses.A_BOLD)
+        c = screen.getch()
+        while c != (109):
+            c = screen.getch()
+        if c == 109:
+            display_menu(screen, status_window)
 
 def menu_check_user_tree_dn_show_users(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    user_tree_dn = configuration_dict["user_tree_dn"]
+    user_id_attribute = configuration_dict["user_id_attribute"]
+    object_class = "TEMPORARY"
+    limit_prompt = "How many users would you like to see?"
+    limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
 
 
 def menu_get_specific_user(screen):
@@ -563,6 +597,8 @@ def display_menu(screen, status_window):
                 menu_check_ldap_suffix(screen)
             elif option_num == 5:
                 menu_show_list_user_object_classes(screen)
+            elif option_num == 6:
+                menu_check_user_tree_dn_show_users(screen)
             elif option_num == 14:
                 sys.exit(0)
             else:
