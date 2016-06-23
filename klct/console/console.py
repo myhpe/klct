@@ -163,21 +163,29 @@ def prompt_char_input(screen, y, x, prompt_string, list):
         screen.addstr(y, x, prompt_string, curses.color_pair(2))
         screen.refresh()
         ch_input = screen.getstr(y + 1, x + 1, 1)
+    curses.noecho()
     return ch_input
 
 
-def my_numb_input(screen, y, x, prompt_string):
+def my_numb_input(screen, y, x, prompt_string, limit=None):
     curses.echo()
-    screen.addstr(y, x, prompt_string, curses.color_pair(2))
-    screen.addch(y + 1, x, ">")
+    screen.addstr(y, x, prompt_string)
+    screen.addstr(y + 1, x, ">            ")
     screen.refresh()
     numb_input = screen.getstr(y + 1, x + 1, 10)
+    curses.noecho()
     while not numb_input.isdigit():
         screen.addstr(y, x, "                                                                  ")
         screen.addstr(y + 1, x, ">                                 ")
-        screen.addstr(y, x, prompt_string, curses.color_pair(2))
+        screen.addstr(y, x, prompt_string)
         numb_input = screen.getstr(y + 1, x + 1, 10)
-    return int(numb_input)
+    if limit is not None:
+        if int(numb_input) > limit:
+            return my_numb_input(screen, y, x, prompt_string, limit)
+        else:
+            return int(numb_input)
+    else:
+        return int(numb_input)
 
 def setup_menu_call(screen):
     """Typically called at start of a menu method.
@@ -531,8 +539,9 @@ def menu_show_list_user_object_classes(screen):
         screen.addstr(screen_dims[0]/2 - 4, screen_dims[1]/2 - 13, "Press m to go to the menu.",
                       curses.A_BOLD)
         # FIX ME PLEASE
-        choice = my_numb_input(screen, screen_dims[0]/2 + len(object_classes_list), screen_dims[1]/2 - 15,
-                               "Please choose one of the above.")
+        num_obj_classes = len(object_classes_list)
+        choice = my_numb_input(screen, screen_dims[0]/2 + num_obj_classes, screen_dims[1]/2 - 15,
+                               "Please choose one of the above.", num_obj_classes)
         configuration_dict["user_object_class"] = object_classes_list[choice - 1]  # might have to change my_numb_input to check limit of number
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
                       curses.A_BOLD)
