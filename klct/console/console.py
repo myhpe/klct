@@ -34,37 +34,41 @@ status_window_text = term_screen.subwin(term_screen_dimensions[0] - 4, term_scre
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
 menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
 menu_options = ["1. Enter/Validate LDAP Server IP",
-                "2. Check Connection to LDAP Server (URL)",
-                "3. Check Connection to LDAP Server (URL,User/Pass,SSL/TLS)",
-                "4. Get Server Information",
-                "5. Check LDAP Suffix",
+                "2. Check Connection to LDAP Server",
+                "3. Get Server Information",
+                "4. Check LDAP Suffix",
+                "5. Input User ID Attribute/User Name Attribute",
                 "6. Show List of User-Related ObjectClasses",
                 "7. Check User Tree DN and Show List of Users",
                 "8. Get a Specific User",
-                "9. Show List of Group Related ObjectClasses",
-                "10. Check Group Tree DN and Show List of Groups",
-                "11. Get Specific Group",
-                "12. Add Additional Configuration Options",
-                "13. Show Configuration",
+                "9. Input Group ID Attribute/Group Name Attribute",
+                "10. Show List of Group Related ObjectClasses",
+                "11. Check Group Tree DN and Show List of Groups",
+                "12. Get Specific Group",
+                "13. Add Additional Configuration Options",
                 "14. Save/Create Configuration File"]
-configuration_dict = {"url": "none",
-                      "suffix": "none",
-                      "query_scope": "none",
-                      "user_tree_dn": "none",
-                      "user": "none",
-                      "password": "none",
-                      "user_object_class": "none",
-                      "user_id_attribute": "none",
-                      "user_name_attribute": "none",
-                      "group_tree_dn":"none",
-                      "group_objectclass": "none",
-                      "group_id_attribute": "none",
-                      "use_pool": "none",
-                      "user_enabled_attribute": "none",
-                      "user_enabled_mask": "none",
-                      "user_enabled_default": "none",
-                      "use_tls": "none"
+configuration_dict = {
                }
+temp_dict = {
+            "url": "none",
+            "suffix": "none",
+            "query_scope": "none",
+            "user_tree_dn": "none",
+            "user": "none",
+            "password": "none",
+            "user_object_class": "none",
+            "user_id_attribute": "none",
+            "user_name_attribute": "none",
+            "group_tree_dn":"none",
+            "group_objectclass": "none",
+            "group_id_attribute": "none",
+            "use_pool": "none",
+            "user_enabled_attribute": "none",
+            "user_enabled_mask": "none",
+            "user_enabled_default": "none",
+            "use_tls": "none" }
+
+
 var_dict = {"conn_info": "none",
             "object_class": "none"}
 
@@ -259,8 +263,8 @@ def adv_ldap_success(screen, conn_info, max_yx):
     screen.addstr(max_yx[0] / 2 - 7, max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
-    menu_options[2] = u"3. Check Connection to LDAP (URL, User/Pass, SSL/TLS) ✓"
-    menu_color[2] = curses.color_pair(7)
+    menu_options[1] = u"2. Check Connection to LDAP (URL, User/Pass, SSL/TLS) ✓"
+    menu_color[1] = curses.color_pair(7)
     screen.addstr(max_yx[0] / 2 - 6, max_yx[1] / 2 - 25,
                   "Press 'n' to move on to next step, or 'm' for menu.",
                   curses.color_pair(3) | curses.A_BOLD)
@@ -291,12 +295,14 @@ def adv_ldap_fail(screen, conn_info, max_yx):
 
 
 def show_console_in_status_window():
+    status_window.box()
     status_window_text_dimensions = status_window_text.getmaxyx()
     stat_win_half_y = status_window_text_dimensions[0]/2
     stat_win_half_x = status_window_text_dimensions[1]/2
     configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
-    configuration_dict_str = str(configuration_dict)
+    status_window.refresh()
     status_window_text.addstr(0, 0, configuration_dict_yaml_str)
+    status_window_text.refresh()
 
 
 def menu_ping_ldap_ip(screen):
@@ -324,6 +330,7 @@ def menu_ping_ldap_ip(screen):
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
         configuration_dict["url"] = "ldap://" + ip_string
+        show_console_in_status_window()
     elif temp_bool == -1:
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
                       "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
@@ -411,8 +418,8 @@ def menu_get_server_info(screen):
         screen.getch()
         display_menu(screen, status_window)
     else:
-        menu_options[3] = u"4. Get Server Information ✓"
-        menu_color[3] = curses.color_pair(7)
+        menu_options[2] = u"3. Get Server Information ✓"
+        menu_color[2] = curses.color_pair(7)
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
         server_info_dict = configTool.retrieve_server_info(server)
@@ -442,8 +449,8 @@ def menu_check_ldap_suffix(screen):
         results = configTool.check_LDAP_suffix(conn, base_dn)
         if results["exit_status"] == 1:
             configuration_dict["suffix"] = base_dn
-            menu_options[4] = u"5. Check LDAP Suffix ✓"
-            menu_color[4] = curses.color_pair(7)
+            menu_options[3] = u"4. Check LDAP Suffix ✓"
+            menu_color[3] = curses.color_pair(7)
             message_color = 6
         else:
             message_color = 3
@@ -456,6 +463,20 @@ def menu_check_ldap_suffix(screen):
             c = screen.getch()
         if c == 109:
             display_menu(screen, status_window)
+
+
+def menu_input_user_attributes(screen):
+    screen_dims = setup_menu_call(screen)
+    # IMPLEMENT ME
+    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 15,
+                                     "What is the user id attribute?")
+    configuration_dict["user_id_attribute"] = user_id_attribute
+
+
+def validate_user_dn_input(string):
+    """Validate user tree dn?
+
+    Check to see that ou= is not put in prefix, and no comma at end?"""
 
 
 def menu_show_list_user_object_classes(screen):
@@ -471,11 +492,12 @@ def menu_show_list_user_object_classes(screen):
         user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 15,
                                          "What is the user id attribute?")
         configuration_dict["user_id_attribute"] = user_id_attribute # MAYBE VALIDATE USER INPUT?!
-        user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 -15,
-                                     "What is the user tree DN?") # MAYBE VALIDATE USER INPUT?
-        user_tree_dn = user_dn + configuration_dict["suffix"]
+        user_tree_dn_prompt = "What is the user tree DN?"
+        user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 - len(user_tree_dn_prompt)/2,
+                                     user_tree_dn_prompt) # MAYBE VALIDATE USER INPUT?
+        user_tree_dn = "ou=" + user_dn + "," + configuration_dict["suffix"]
         configuration_dict["user_tree_dn"] = user_tree_dn
-        return_values = configTool.list_user_related_OC(conn, user_tree_dn, user_id_attribute)
+        return_values = configTool.list_user_related_OC(conn, configuration_dict['suffix'], user_id_attribute)
         if return_values['exit_status'] == 1:
             menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
             menu_color[5] = curses.color_pair(7)
@@ -496,22 +518,67 @@ def menu_check_user_tree_dn_show_users(screen):
     object_class = "TEMPORARY"
     limit_prompt = "How many users would you like to see?"
     limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
-
+    return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    c = screen.getch()
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen,status_window)
 
 def menu_get_specific_user(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    user_dn = "?"
+    user_id_attribute = configuration_dict["user_id_attribute"]
+    object_class = "?"
+    user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
+    name = "?"
+    return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_show_list_group_object_classes(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_check_group_tree_dn_show_groups(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    object_class = "?"
+    limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
+    return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_get_specific_group(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    conn = var_dict["conn_info"]["conn"]
+    group_dn = "?"
+    group_id_attribute = "?"
+    object_class = "?"
+    group_name_attribute = "?"
+    name = "?"
+    return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def menu_additional_config_options(screen):
@@ -536,7 +603,6 @@ def display_menu(screen, status_window):
     screen.box()
     status_window.box()
     show_console_in_status_window()
-    status_window.refresh()
     screen.refresh()
 
     menu_selection = -1
@@ -588,13 +654,13 @@ def display_menu(screen, status_window):
             if option_num == 0:
                 menu_ping_ldap_ip(screen)
             elif option_num == 1:
-                menu_check_ldap_connection_basic(screen)
-            elif option_num == 2:
                 menu_check_ldap_connection_adv(screen)
-            elif option_num == 3:
+            elif option_num == 2:
                 menu_get_server_info(screen)
-            elif option_num == 4:
+            elif option_num == 3:
                 menu_check_ldap_suffix(screen)
+            elif option_num == 4:
+                menu_input_user_attributes(screen)
             elif option_num == 5:
                 menu_show_list_user_object_classes(screen)
             elif option_num == 6:
