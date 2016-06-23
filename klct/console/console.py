@@ -179,6 +179,7 @@ def ip_not_exists(screen, screen_dims):
                   "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
     screen.addstr(screen_dims[0] / 2 - 1, screen_dims[1] / 2 - 22,
               "Press p to input ip address, or 'm' for menu", curses.color_pair(5))
+    key_press = screen.getch()
     while key_press not in (109, 112):  # 109 == m, 112 == p
         key_press = screen.getch()
     if key_press == 109:
@@ -263,11 +264,11 @@ def adv_ldap_success(screen, conn_info, max_yx):
     screen.addstr(max_yx[0] / 2 - 7, max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
-    menu_options[1] = u"2. Check Connection to LDAP (URL, User/Pass, SSL/TLS) ✓"
+    menu_options[1] = u"2. Check Connection to LDAP ✓"
     menu_color[1] = curses.color_pair(7)
     screen.addstr(max_yx[0] / 2 - 6, max_yx[1] / 2 - 25,
                   "Press 'n' to move on to next step, or 'm' for menu.",
-                  curses.color_pair(3) | curses.A_BOLD)
+                  curses.A_BOLD)
     character = screen.getch()
     while character != 109:
         character = screen.getch()
@@ -342,7 +343,7 @@ def menu_ping_ldap_ip(screen):
     if temp_char == 109:
         display_menu(screen, status_window)
     elif temp_char == 110:
-        menu_check_ldap_connection_basic(screen)
+        menu_check_ldap_connection_adv(screen)
     elif temp_char == 114:
         menu_ping_ldap_ip(screen)
 
@@ -380,7 +381,7 @@ def menu_check_ldap_connection_basic(screen):
 
 def menu_check_ldap_connection_adv(screen):
     max_yx = setup_menu_call(screen)
-    if configuration_dict["url"] == "none":
+    if not configuration_dict.has_key("url"):
         ip_not_exists(screen, max_yx)
     else:
         y_n = prompt_char_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
@@ -408,24 +409,29 @@ def menu_check_ldap_connection_adv(screen):
 
 def menu_get_server_info(screen):
     """Displays server information on screen.
-    Currently needs fullscreen in order to print everything, but later will parse information."""
+    Currently only displays version and type, but later will add information."""
     screen_dims = setup_menu_call(screen)
     if var_dict["conn_info"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.",
+        error_msg = "No LDAP server found. Press 'm' to go to menu."
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
         display_menu(screen, status_window)
     else:
-        menu_options[2] = u"3. Get Server Information ✓"
-        menu_color[2] = curses.color_pair(7)
+
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
-        server_info_dict = configTool.retrieve_server_info(server)
-        server_info = server_info_dict["info"]
-        server_info_str = str(server_info)
-        num_spaces = [" "]*(screen_dims[1]/2 - 8)
-        str_spaces = ''.join(num_spaces)
-        screen.addstr(0,0, server_info_str + "\n" + str_spaces + "Press m to go to the menu.")
+        server_info_dict = configTool.retrieve_server_info(conn_info["conn"])
+        if server_info_dict["exit_status"] == 1:
+            menu_options[2] = u"3. Get Server Information ✓"
+            menu_color[2] = curses.color_pair(7)
+            version = str(server_info_dict["version"])
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(version)/2, version)
+            ldap_type = str(server_info_dict["type"])
+            screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(ldap_type)/2, ldap_type)
+            screen.refresh()
+        else:
+            screen.addstr(screen_dims[0]/2, screen_dims[1]/2, "error", curses.color_pair(3))
         c = screen.getch()
         while c != (109):
             c = screen.getch()
@@ -434,6 +440,7 @@ def menu_get_server_info(screen):
 
 
 def menu_check_ldap_suffix(screen):
+    """If failure, may be due to invalid credentials. May want to alert user of this later on."""
     screen_dims = setup_menu_call(screen)
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
@@ -498,14 +505,15 @@ def menu_show_list_user_object_classes(screen):
         conn_info = var_dict["conn_info"]
         conn = conn_info['conn']
         base_dn = configuration_dict["suffix"]
-        user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 15,
-                                         "What is the user id attribute?")
-        configuration_dict["user_id_attribute"] = user_id_attribute # MAYBE VALIDATE USER INPUT?!
-        user_tree_dn_prompt = "What is the user tree ou?"
-        user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 - len(user_tree_dn_prompt)/2,
-                                     user_tree_dn_prompt) # MAYBE VALIDATE USER INPUT?
-        user_tree_dn = "ou=" + user_dn + "," + configuration_dict["suffix"]
-        configuration_dict["user_tree_dn"] = user_tree_dn
+        if configuration_dict.has_key("user_id_attribute"):
+            user_id_attribute = configuration_dict["user_id_attribute"]
+        else:
+            print("ERROR, NEED TO IMPLEMENT")
+        # user_tree_dn_prompt = "What is the user tree ou?"
+        # user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 - len(user_tree_dn_prompt)/2,
+        #                             user_tree_dn_prompt) # MAYBE VALIDATE USER INPUT?
+        # user_tree_dn = "ou=" + user_dn + "," + configuration_dict["suffix"]
+        # configuration_dict["user_tree_dn"] = user_tree_dn
         return_values = configTool.list_user_related_OC(conn, configuration_dict['suffix'], user_id_attribute)
         if return_values['exit_status'] == 1:
             menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
@@ -697,6 +705,8 @@ def display_menu(screen, status_window):
             elif option_num == 13:
                 menu_create_config(screen)
             elif option_num == 14:
+                if var_dict["conn_info"] != "none":
+                    var_dict["conn_info"]["conn"].unbind()
                 sys.exit(0)
             else:
                 display_menu(screen, status_window)
