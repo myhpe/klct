@@ -136,11 +136,13 @@ def retrieve_server_info(conn):
             version = ""
             i = 0
             try:
-                print(len(conn.response[0]['attributes']['supportedLDAPVersion']))
-                for i in range(len(conn.response[0]['attributes']['supportedLDAPVersion']) - 1):
-                    print(i)
-                    version = version + conn.response[0]['attributes']['supportedLDAPVersion'][i] + ", "
-                version = version + conn.response[0]['attributes']['supportedLDAPVersion'][i+1]
+                version_result = conn.response[0]['attributes']['supportedLDAPVersion']
+                for i in range(len(version_result) - 1):
+                    version = version + str(version_result[i]) + ", "
+                if len(version_result) == 1:
+                    version = version + str(conn.response[0]['attributes']['supportedLDAPVersion'][i])
+                else:
+                    version = version + str(conn.response[0]['attributes']['supportedLDAPVersion'][i+1])
             except:
                 print(sys.exc_info()[1])
                 version = "N/A"
