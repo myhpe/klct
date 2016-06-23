@@ -10,9 +10,9 @@ import configTool
 
 """SET UP"""
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
-term_screen = curses.initscr()  # terminal screen
-term_screen_dimensions = term_screen.getmaxyx()  # returns tuple (y,x) of current screen resolution
-term_screen.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
+stdscr = curses.initscr()  # terminal screen
+stdscr_dimensions = stdscr.getmaxyx()  # returns tuple (y,x) of current screen resolution
+stdscr.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
 curses.noecho()
 start_instruction = "LDAP Configuration Tool. Press 'm' to go to the menu."
 if curses.has_colors():  # enable coloring
@@ -24,12 +24,12 @@ curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
-term_screen.bkgd(curses.color_pair(1))
+stdscr.bkgd(curses.color_pair(1))
 """Configuration File Status Windows, one for box and one for displaying text"""
-status_window = term_screen.subwin(term_screen_dimensions[0] - 2, term_screen_dimensions[1] / 4 - 2, 1,
-                                   term_screen_dimensions[1] - term_screen_dimensions[1]/4 )
-status_window_text = term_screen.subwin(term_screen_dimensions[0] - 4, term_screen_dimensions[1] / 4 - 4, 2,
-                                        term_screen_dimensions[1] - term_screen_dimensions[1]/4 + 1)
+status_window = stdscr.subwin(stdscr_dimensions[0] - 2, stdscr_dimensions[1] / 4 - 2, 1,
+                              stdscr_dimensions[1] - stdscr_dimensions[1]/4 )
+status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4, stdscr_dimensions[1] / 4 - 4, 2,
+                                   stdscr_dimensions[1] - stdscr_dimensions[1]/4 + 1)
 
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
 menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
@@ -101,7 +101,7 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 30)  # 20 = max chars to in string
+    str_input = screen.getstr(y + 1, x + 1, 50)  # 20 = max chars to in string
     curses.noecho()
     return str_input
 
@@ -296,12 +296,10 @@ def adv_ldap_fail(screen, conn_info, max_yx):
 
 def show_console_in_status_window():
     status_window.box()
-    status_window_text_dimensions = status_window_text.getmaxyx()
-    stat_win_half_y = status_window_text_dimensions[0]/2
-    stat_win_half_x = status_window_text_dimensions[1]/2
-    configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
+    if bool(configuration_dict):
+        configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
+        status_window_text.addstr(0, 0, configuration_dict_yaml_str)
     status_window.refresh()
-    status_window_text.addstr(0, 0, configuration_dict_yaml_str)
     status_window_text.refresh()
 
 
@@ -468,21 +466,32 @@ def menu_check_ldap_suffix(screen):
 def menu_input_user_attributes(screen):
     screen_dims = setup_menu_call(screen)
     # IMPLEMENT ME
-    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 15,
-                                     "What is the user id attribute?")
+    user_id_attr_prompt = "What is the user id attribute?"
+    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_id_attr_prompt)/2,
+                                     user_id_attr_prompt)
     configuration_dict["user_id_attribute"] = user_id_attribute
+    show_console_in_status_window()
+    user_name_attr_prompt = "What is the user name attribute?"
+    user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_id_attr_prompt)/2,
+                                       user_name_attr_prompt)
+    configuration_dict["user_name_attribute"] = user_name_attribute # VALIDATE INPUT?
+    show_console_in_status_window()
+    menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
+    menu_color[4] = curses.color_pair(7)
+    display_menu(screen, status_window)
+
 
 
 def validate_user_dn_input(string):
     """Validate user tree dn?
-
     Check to see that ou= is not put in prefix, and no comma at end?"""
 
 
 def menu_show_list_user_object_classes(screen):
     screen_dims = setup_menu_call(screen)
-    if var_dict["conn_info"] == "none" or configuration_dict["suffix"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
+    if var_dict["conn_info"] == "none" or not configuration_dict.has_key("suffix"):
+        prompt_string = "No connection to server found or no suffix. Press 'm' to go to menu."
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_string)/2, prompt_string)
         screen.getch()
         display_menu(screen, status_window)
     else:
@@ -492,7 +501,7 @@ def menu_show_list_user_object_classes(screen):
         user_id_attribute = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - 15,
                                          "What is the user id attribute?")
         configuration_dict["user_id_attribute"] = user_id_attribute # MAYBE VALIDATE USER INPUT?!
-        user_tree_dn_prompt = "What is the user tree DN?"
+        user_tree_dn_prompt = "What is the user tree ou?"
         user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 - len(user_tree_dn_prompt)/2,
                                      user_tree_dn_prompt) # MAYBE VALIDATE USER INPUT?
         user_tree_dn = "ou=" + user_dn + "," + configuration_dict["suffix"]
@@ -504,6 +513,7 @@ def menu_show_list_user_object_classes(screen):
             screen.addstr(screen_dims[0]/2 + 6, screen_dims[1]/2 - 15, str(return_values['objectclasses']))
         screen.addstr(screen_dims[0]/2 - 4, screen_dims[1]/2 - 13, "Press m to go to the menu.",
                       curses.A_BOLD)
+
         c = screen.getch()
         while c != (109):
             c = screen.getch()
