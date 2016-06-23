@@ -154,7 +154,7 @@ def list_user_related_OC(conn, user_dn, user_id_attribute):
         assert conn.closed is not True
         search_filter = create_filter([user_id_attribute], 1)
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=['objectclass']) is True:
-            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values[len(conn.entries[0].objectclass.raw_values)-1]}
     except:
         pass    
     return {'exit_status': 0, 'objectclasses': None}
@@ -194,7 +194,7 @@ def list_group_related_OC(conn, group_dn, group_id_attribute):
     try:
         assert conn.closed is not True
         search_filter = create_filter([group_id_attribute], 1)
-        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=['objectclass']) is True:
+        if conn.search(search_base=group_dn, search_filter='('+group_id_attribute+'=testgroup1)', attributes=['objectclass']) is True:
             return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     except:
         pass
@@ -219,7 +219,6 @@ def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
 def get_group(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name):
     """Returns a specific group.
     """
-    print(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name)
     try:
         assert conn.closed is not True
         search_filter = create_filter([group_name_attribute, name, objectclass, group_id_attribute], 3)
