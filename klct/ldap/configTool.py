@@ -4,7 +4,7 @@ import subprocess
 import socket
 import sys
 import ldap3
-from ldap3 import Server, Connection, ALL
+from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES, SEARCH_SCOPE_BASE_OBJECT
 import yaml
 
 
@@ -127,11 +127,18 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     return conn_info
 
 
-def retrieve_server_info(server):
+def retrieve_server_info(conn):
     """Retrieves the information related to the server passed in.
     """
-    dict = {'info': server.info, 'schema': server.schema}
-    return dict
+    try:
+        assert conn.closed is not True
+        if conn.search('', '(objectclass=*)', SEARCH_SCOPE_BASE_OBJECT, attributes=ALL_ATTRIBUTES, get_operational_attributes=True) is True:
+            return {'exit_status': 1, 'version': conn.response[0]['attributes']['supportedLDAPVersion'], 'type': conn.response[0]['attributes']['structuralObjectClass']}
+    except:
+        pass
+    return {'exit_status': 0, 'version': None, 'type': None}
+    #dict = {'info': server.info, 'schema': server.schema}
+    #return dict
 
 
 def check_LDAP_suffix(conn, base_dn):
@@ -154,7 +161,7 @@ def list_user_related_OC(conn, user_dn, user_id_attribute):
         assert conn.closed is not True
         search_filter = create_filter([user_id_attribute], 1)
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=['objectclass']) is True:
-            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values[len(conn.entries[0].objectclass.raw_values)-1]}
+            return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     except:
         pass    
     return {'exit_status': 0, 'objectclasses': None}
