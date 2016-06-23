@@ -544,6 +544,8 @@ def menu_get_specific_user(screen):
     user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
     name = "?"
     return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+
+    c = screen.getch()
     while c != (109):
         c = screen.getch()
     if c == 109:
@@ -556,6 +558,7 @@ def menu_show_list_group_object_classes(screen):
     group_dn = "?"
     group_id_attribute = "?"
     return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    c = screen.getch()
     while c != (109):
         c = screen.getch()
     if c == 109:
@@ -570,6 +573,7 @@ def menu_check_group_tree_dn_show_groups(screen):
     object_class = "?"
     limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
     return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    c = screen.getch()
     while c != (109):
         c = screen.getch()
     if c == 109:
@@ -585,6 +589,7 @@ def menu_get_specific_group(screen):
     group_name_attribute = "?"
     name = "?"
     return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    c = screen.getch()
     while c != (109):
         c = screen.getch()
     if c == 109:
@@ -600,7 +605,21 @@ def menu_show_config(screen):
 
 
 def menu_create_config(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen)
+    data = configuration_dict
+    string_prompt = "Please specify a file name."
+    path = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - len(string_prompt)/2, string_prompt)
+    return_values = configTool.save_config(data, path)
+    {'exit_status': 0, 'message': "Unable to open file specified"}
+    return_msg = return_values["message"]
+    screen.addstr(screen_dims[0]/2 - 4, screen_dims[1]/2 - len(return_msg)/2, return_msg)
+    end_msg = "Press m to go to the menu."
+    screen.addstr(screen_dims[0]/2 - 3, screen_dims[1]/2 - len(end_msg)/2, end_msg)
+    c = screen.getch()
+    while c != (109):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
 
 
 def display_menu(screen, status_window):
@@ -675,6 +694,8 @@ def display_menu(screen, status_window):
                 menu_show_list_user_object_classes(screen)
             elif option_num == 6:
                 menu_check_user_tree_dn_show_users(screen)
+            elif option_num == 13:
+                menu_create_config(screen)
             elif option_num == 14:
                 sys.exit(0)
             else:
