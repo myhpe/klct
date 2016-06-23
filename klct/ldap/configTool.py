@@ -4,7 +4,7 @@ import subprocess
 import socket
 import sys
 import ldap3
-from ldap3 import Server, Connection, ALL, ALL_ATTRIBUTES, SEARCH_SCOPE_BASE_OBJECT
+from ldap3 import Server, Connection, ALL
 import yaml
 
 
@@ -132,8 +132,23 @@ def retrieve_server_info(conn):
     """
     try:
         assert conn.closed is not True
-        if conn.search('', '(objectclass=*)', SEARCH_SCOPE_BASE_OBJECT, attributes=ALL_ATTRIBUTES, get_operational_attributes=True) is True:
-            return {'exit_status': 1, 'version': conn.response[0]['attributes']['supportedLDAPVersion'], 'type': conn.response[0]['attributes']['structuralObjectClass']}
+        if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True:
+            version = ""
+            i = 0
+            try:
+                print(len(conn.response[0]['attributes']['supportedLDAPVersion']))
+                for i in range(len(conn.response[0]['attributes']['supportedLDAPVersion']) - 1):
+                    print(i)
+                    version = version + conn.response[0]['attributes']['supportedLDAPVersion'][i] + ", "
+                version = version + conn.response[0]['attributes']['supportedLDAPVersion'][i+1]
+            except:
+                print(sys.exc_info()[1])
+                version = "N/A"
+            try:
+                server_type = conn.response[0]['attributes']['structuralObjectClass']
+            except:
+                server_type = "N/A"
+            return {'exit_status': 1, 'version': "supported Ldap version: " + version, 'type': "Ldap server type: " + server_type}
     except:
         pass
     return {'exit_status': 0, 'version': None, 'type': None}
