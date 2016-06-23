@@ -13,6 +13,7 @@ locale.setlocale(locale.LC_ALL, "")  # for unicode support
 stdscr = curses.initscr()  # terminal screen
 stdscr_dimensions = stdscr.getmaxyx()  # returns tuple (y,x) of current screen resolution
 stdscr.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
+stdscr.scrollok(True)
 curses.noecho()
 start_instruction = "LDAP Configuration Tool. Press 'm' to go to the menu."
 if curses.has_colors():  # enable coloring
@@ -28,9 +29,10 @@ stdscr.bkgd(curses.color_pair(1))
 """Configuration File Status Windows, one for box and one for displaying text"""
 status_window = stdscr.subwin(stdscr_dimensions[0] - 2, stdscr_dimensions[1] / 4 - 2, 1,
                               stdscr_dimensions[1] - stdscr_dimensions[1]/4 )
+status_window.scrollok(True)
 status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4, stdscr_dimensions[1] / 4 - 4, 2,
                                    stdscr_dimensions[1] - stdscr_dimensions[1]/4 + 1)
-
+status_window_text.scrollok(True)
 """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
 menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
 menu_options = ["1. Enter/Validate LDAP Server IP",
@@ -74,6 +76,15 @@ var_dict = {"conn_info": "none",
 
 """HELPER METHODS"""
 
+def display_list_with_numbers(screen, y, x, list):
+    """Elements in list must be string."""
+    num_elements = len(list)
+    for i in range(num_elements):
+        elem_i = list[i]
+        elem_string = "{i}. {elem}".format(i=i+1, elem=elem_i)
+        screen.addstr(y + i, x, elem_string)
+
+
 
 def show_instructions(screen):
     """Displays the starting instructions prior to the menu display."""
@@ -90,6 +101,7 @@ def show_instructions(screen):
     screen.refresh()
     main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1]/4 - 1, 1, 1)
     main_window.keypad(True)
+    main_window.scrollok(True)
     display_menu(main_window, status_window)
 
 
@@ -297,9 +309,10 @@ def adv_ldap_fail(screen, conn_info, max_yx):
 
 def show_console_in_status_window():
     status_window.box()
+    status_window_text.addstr(0, 0, "LDAP Configuration File", curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
         configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
-        status_window_text.addstr(0, 0, configuration_dict_yaml_str)
+        status_window_text.addstr(1, 0, configuration_dict_yaml_str)
     status_window.refresh()
     status_window_text.refresh()
 
@@ -418,7 +431,6 @@ def menu_get_server_info(screen):
         screen.getch()
         display_menu(screen, status_window)
     else:
-
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
         server_info_dict = configTool.retrieve_server_info(conn_info["conn"])
@@ -457,6 +469,7 @@ def menu_check_ldap_suffix(screen):
             menu_options[3] = u"4. Check LDAP Suffix ✓"
             menu_color[3] = curses.color_pair(7)
             message_color = 6
+            show_console_in_status_window()
         else:
             message_color = 3
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
@@ -509,24 +522,28 @@ def menu_show_list_user_object_classes(screen):
             user_id_attribute = configuration_dict["user_id_attribute"]
         else:
             print("ERROR, NEED TO IMPLEMENT")
-        # user_tree_dn_prompt = "What is the user tree ou?"
-        # user_dn = my_raw_input(screen, screen_dims[0]/2 + 2, screen_dims[1]/2 - len(user_tree_dn_prompt)/2,
-        #                             user_tree_dn_prompt) # MAYBE VALIDATE USER INPUT?
-        # user_tree_dn = "ou=" + user_dn + "," + configuration_dict["suffix"]
-        # configuration_dict["user_tree_dn"] = user_tree_dn
         return_values = configTool.list_user_related_OC(conn, configuration_dict['suffix'], user_id_attribute)
         if return_values['exit_status'] == 1:
             menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
             menu_color[5] = curses.color_pair(7)
-            screen.addstr(screen_dims[0]/2 + 6, screen_dims[1]/2 - 15, str(return_values['objectclasses']))
+            object_classes_list = return_values['objectclasses']
+            display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/2 - 15, object_classes_list)
         screen.addstr(screen_dims[0]/2 - 4, screen_dims[1]/2 - 13, "Press m to go to the menu.",
                       curses.A_BOLD)
-
+        # FIX ME PLEASE
+        choice = my_numb_input(screen, screen_dims[0]/2 + len(object_classes_list), screen_dims[1]/2 - 15,
+                               "Please choose one of the above.")
+        configuration_dict["user_object_class"] = object_classes_list[choice - 1]  # might have to change my_numb_input to check limit of number
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
+                      curses.A_BOLD)
+        show_console_in_status_window()
         c = screen.getch()
         while c != (109):
             c = screen.getch()
         if c == 109:
             display_menu(screen, status_window)
+
+
 
 def menu_check_user_tree_dn_show_users(screen):
     screen_dims = setup_menu_call(screen)
@@ -537,6 +554,7 @@ def menu_check_user_tree_dn_show_users(screen):
     limit_prompt = "How many users would you like to see?"
     limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
     return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -552,7 +570,7 @@ def menu_get_specific_user(screen):
     user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
     name = "?"
     return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
-
+    # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -566,6 +584,7 @@ def menu_show_list_group_object_classes(screen):
     group_dn = "?"
     group_id_attribute = "?"
     return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -581,6 +600,7 @@ def menu_check_group_tree_dn_show_groups(screen):
     object_class = "?"
     limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
     return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -597,6 +617,7 @@ def menu_get_specific_group(screen):
     group_name_attribute = "?"
     name = "?"
     return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
         c = screen.getch()
