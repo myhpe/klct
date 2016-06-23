@@ -97,7 +97,7 @@ def ping_LDAP_server(host_name):
     is_valid = check_valid_IP(host_name)
     if not is_valid:
         return -1
-    response = None/home/andy
+    response = None
 
     with open(os.devnull, "w"):
         try:
