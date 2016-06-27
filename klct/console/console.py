@@ -254,8 +254,8 @@ def adv_ldap_setup_prompts(screen, max_yx):
     if userpw_y_or_n == 'y':
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         # if want password hidden as "*" change my_raw_input to my_pw_input
-        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22,
-                               "Please type your password and hit enter.")
+        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 23,
+                               "Please type your password.")
         tls_y_coord = max_yx[0] / 2 + 4
     else:
         user_name = ""
@@ -592,13 +592,22 @@ def menu_show_list_user_object_classes(screen):
                 num_obj_classes = len(object_classes_list)
                 choice = my_numb_input(screen, screen_dims[0]/2 + num_obj_classes, screen_dims[1]/2 - 15,
                                        "Please choose one of the above.", num_obj_classes)
-                configuration_dict["user_object_class"] = object_classes_list[choice - 1] 
+                configuration_dict["user_object_class"] = object_classes_list[choice - 1]
                 screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
                               curses.A_BOLD)
                 show_console_in_status_window()
             else:
                 # ERROR OCCURED
-                pass
+                screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 12, "No object classes found.")
+                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 24,
+                              "Press 'r' to re-enter user info, or 'm' for menu.")
+                c = screen.getch()
+                while c not in (109, 114):
+                    c = screen.getch()
+                if c == 109:
+                    display_menu(screen, status_window)
+                elif c == 114:
+                    menu_input_user_attributes(screen)
         else:
             error_prompt = "Please input the user id attribute in step 5."
             screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(error_prompt) / 2, error_prompt,
