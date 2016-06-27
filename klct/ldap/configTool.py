@@ -144,13 +144,12 @@ def retrieve_server_info(conn):
                 else:
                     version = version + str(conn.response[0]['attributes']['supportedLDAPVersion'][i+1])
             except:
-                print(sys.exc_info()[1])
                 version = "N/A"
             try:
                 server_type = conn.response[0]['attributes']['structuralObjectClass']
             except:
                 server_type = "N/A"
-            return {'exit_status': 1, 'version': "supported Ldap version: " + version, 'type': "Ldap server type: " + server_type}
+            return {'exit_status': 1, 'version': "Supported LDAP Version: " + version, 'type': "LDAP Server Type: " + server_type}
     except:
         pass
     return {'exit_status': 0, 'version': None, 'type': None}
@@ -180,7 +179,7 @@ def list_user_related_OC(conn, user_dn, user_id_attribute):
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=['objectclass']) is True:
             return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     except:
-        pass    
+        pass
     return {'exit_status': 0, 'objectclasses': None}
 
 

@@ -216,7 +216,7 @@ def basic_ldap_menu_success(screen, conn_info, screen_dims):
     menu_options[1] = u"2. Check Connection to LDAP (URL) ✓"
     menu_color[1] = curses.color_pair(7)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 25,
-                  "Press 'n' to move on to next step, or 'm' for menu.")
+                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
     character = screen.getch()
     while character != 109:
         character = screen.getch()
@@ -290,10 +290,12 @@ def adv_ldap_success(screen, conn_info, max_yx):
                   "Press 'n' to move on to next step, or 'm' for menu.",
                   curses.A_BOLD)
     character = screen.getch()
-    while character != 109:
+    while character not in (109, 110):
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu(screen, status_window)
+    elif character == 110:  # 114 == n
+        menu_get_server_info(screen)
 
 
 def adv_ldap_fail(screen, conn_info, max_yx):
@@ -346,7 +348,7 @@ def menu_ping_ldap_ip(screen):
         screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 26,
                       "This IP will automatically be used in the next steps.", curses.color_pair(4))
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
-                      "Press 'n' to move on to next step, or 'm' for menu.")
+                      "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
         configuration_dict["url"] = "ldap://" + ip_string
@@ -364,7 +366,7 @@ def menu_ping_ldap_ip(screen):
     if temp_char == 109:
         display_menu(screen, status_window)
     elif temp_char == 110:
-        menu_check_ldap_connection_adv(screen)
+        menu_check_ldap_connection_adv(screen, 1)
     elif temp_char == 114:
         menu_ping_ldap_ip(screen)
 
@@ -400,13 +402,16 @@ def menu_check_ldap_connection_basic(screen):
             menu_ping_ldap_ip(screen)
 
 
-def menu_check_ldap_connection_adv(screen):
+def menu_check_ldap_connection_adv(screen, skip=0):
     max_yx = setup_menu_call(screen)
     if not configuration_dict.has_key("url"):
         ip_not_exists(screen, max_yx)
     else:
-        y_n = prompt_char_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
+        if skip == 0:
+            y_n = prompt_char_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
                                 "Valid IP has been found, would you like to use this? [y/n]", ('y', 'n'))
+        else:
+            y_n = 'y'
         screen.clear()
         if y_n == 'y':
             adv_ldap_inputs = adv_ldap_setup_prompts(screen, max_yx)
@@ -454,20 +459,23 @@ def menu_get_server_info(screen):
         else:
             screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, "error", curses.color_pair(3))
 
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
-                      curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Server Information:", curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+                      "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
         c = screen.getch()
-        while c != (109):
+        while c not in (109, 110):
             c = screen.getch()
         if c == 109:
             display_menu(screen, status_window)
+        if c == 110:
+            menu_check_ldap_suffix(screen)
 
 
 def menu_check_ldap_suffix(screen):
     """If failure, may be due to invalid credentials. May want to alert user of this later on."""
     screen_dims = setup_menu_call(screen)
     if var_dict["conn_info"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 8, "No LDAP server found. Press 'm' to go to menu.")
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
         display_menu(screen, status_window)
     else:
@@ -485,36 +493,65 @@ def menu_check_ldap_suffix(screen):
             menu_color[3] = curses.color_pair(7)
             message_color = 6
             show_console_in_status_window()
+            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
+                          curses.color_pair(message_color) | curses.A_BOLD)
+            screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+                          "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+            c = screen.getch()
+            while c not in (109, 110):
+                c = screen.getch()
+            if c == 109:
+                display_menu(screen, status_window)
+            elif c == 110:
+                menu_input_user_attributes(screen)
         else:
             message_color = 3
-        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
-                      curses.color_pair(message_color) | curses.A_BOLD)
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
-                    curses.A_BOLD)
-        c = screen.getch()
-        while c != (109):
+            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
+                          curses.color_pair(message_color) | curses.A_BOLD)
+            screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 23,
+                          "Press 'r' to retry this step, or 'm' for menu.")
             c = screen.getch()
-        if c == 109:
-            display_menu(screen, status_window)
+            while c not in (109, 114):
+                c = screen.getch()
+            if c == 109:
+                display_menu(screen, status_window)
+            elif c == 114:
+                menu_check_ldap_suffix(screen)
 
 
 def menu_input_user_attributes(screen):
     screen_dims = setup_menu_call(screen)
     # IMPLEMENT ME
     user_id_attr_prompt = "What is the user id attribute?"
-    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_id_attr_prompt)/2,
+    user_name_attr_prompt = "What is the user name attribute?"
+    user_tree_dn_prompt = "What is the user tree DN, not including the base DN (i.e. ou=Users)?"
+
+    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
                                      user_id_attr_prompt)
     configuration_dict["user_id_attribute"] = user_id_attribute
     show_console_in_status_window()
-    user_name_attr_prompt = "What is the user name attribute?"
-    user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_id_attr_prompt)/2,
+
+    user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
                                        user_name_attr_prompt)
     configuration_dict["user_name_attribute"] = user_name_attribute # VALIDATE INPUT?
     show_console_in_status_window()
+
+    user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+                                     user_tree_dn_prompt)
+    configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
+    show_console_in_status_window()
     menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
     menu_color[4] = curses.color_pair(7)
-    display_menu(screen, status_window)
 
+    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+    c = screen.getch()
+    while c not in (109, 110):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
+    elif c == 110:
+        menu_show_list_user_object_classes(screen)
 
 
 def validate_user_dn_input(string):
