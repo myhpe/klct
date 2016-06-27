@@ -105,7 +105,6 @@ def show_instructions(screen):
     display_menu(main_window, status_window)
 
 
-# MAY WANT TO SHOW CURSOR
 def my_raw_input(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
     will show a prompt at (y + 1, x). Currently only able to
@@ -114,7 +113,7 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 255)  # 255 = max chars to in string
+    str_input = screen.getstr(y + 1, x + 1, 50)  # 20 = max chars to in string
     curses.noecho()
     return str_input
 
@@ -320,7 +319,7 @@ def adv_ldap_fail(screen, conn_info, max_yx):
 
 def show_console_in_status_window():
     status_window.box()
-    status_window_text.addstr(0, 0, "Keystone-LDAP Configuration", curses.A_BOLD | curses.A_UNDERLINE)
+    status_window_text.addstr(0, 0, "LDAP Configuration File", curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
         configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
         status_window_text.addstr(1, 0, configuration_dict_yaml_str)
@@ -590,7 +589,7 @@ def menu_show_list_user_object_classes(screen):
                 num_obj_classes = len(object_classes_list)
                 choice = my_numb_input(screen, screen_dims[0]/2 + num_obj_classes, screen_dims[1]/2 - 15,
                                        "Please choose one of the above.", num_obj_classes)
-                configuration_dict["user_object_class"] = object_classes_list[choice - 1]
+                configuration_dict["user_object_class"] = object_classes_list[choice - 1]  # might have to change my_numb_input to check limit of number
                 screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 13, "Press m to go to the menu.",
                               curses.A_BOLD)
                 show_console_in_status_window()
