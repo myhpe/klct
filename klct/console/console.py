@@ -113,7 +113,7 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 50)  # 20 = max chars to in string
+    str_input = screen.getstr(y + 1, x + 1, 255)  # 20 = max chars to in string
     curses.noecho()
     return str_input
 
