@@ -105,7 +105,6 @@ def show_instructions(screen):
     display_menu(main_window, status_window)
 
 
-# MAY WANT TO SHOW CURSOR
 def my_raw_input(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
     will show a prompt at (y + 1, x). Currently only able to
@@ -114,7 +113,7 @@ def my_raw_input(screen, y, x, prompt_string):
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
-    str_input = screen.getstr(y + 1, x + 1, 255)  # 255 = max chars to in string
+    str_input = screen.getstr(y + 1, x + 1, 255)  # 20 = max chars to in string
     curses.noecho()
     return str_input
 
@@ -255,8 +254,8 @@ def adv_ldap_setup_prompts(screen, max_yx):
     if userpw_y_or_n == 'y':
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         # if want password hidden as "*" change my_raw_input to my_pw_input
-        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22,
-                               "Please type your password and hit enter.")
+        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 23,
+                               "Please type your password.")
         tls_y_coord = max_yx[0] / 2 + 4
     else:
         user_name = ""
@@ -453,9 +452,12 @@ def menu_get_server_info(screen):
             menu_options[2] = u"3. Get Server Information ✓"
             menu_color[2] = curses.color_pair(7)
             version = str(server_info_dict["version"])
-            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(version)/2, version, curses.color_pair(5))
             ldap_type = str(server_info_dict["type"])
-            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(version)/2, ldap_type, curses.color_pair(5))
+            strlen = len(ldap_type)
+            if len(version) > len(ldap_type):
+                strlen = len(version)
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - strlen/2, version, curses.color_pair(5))
+            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - strlen/2, ldap_type, curses.color_pair(5))
             screen.refresh()
         else:
             screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, "error", curses.color_pair(3))
@@ -596,7 +598,16 @@ def menu_show_list_user_object_classes(screen):
                 show_console_in_status_window()
             else:
                 # ERROR OCCURED
-                pass
+                screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 12, "No object classes found.")
+                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 24,
+                              "Press 'r' to re-enter user info, or 'm' for menu.")
+                c = screen.getch()
+                while c not in (109, 114):
+                    c = screen.getch()
+                if c == 109:
+                    display_menu(screen, status_window)
+                elif c == 114:
+                    menu_input_user_attributes(screen)
         else:
             error_prompt = "Please input the user id attribute in step 5."
             screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(error_prompt) / 2, error_prompt,
