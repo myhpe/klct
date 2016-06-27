@@ -452,9 +452,12 @@ def menu_get_server_info(screen):
             menu_options[2] = u"3. Get Server Information ✓"
             menu_color[2] = curses.color_pair(7)
             version = str(server_info_dict["version"])
-            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(version)/2, version, curses.color_pair(5))
             ldap_type = str(server_info_dict["type"])
-            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - len(version)/2, ldap_type, curses.color_pair(5))
+            strlen = len(ldap_type)
+            if len(version) > len(ldap_type):
+                strlen = len(version)
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - strlen/2, version, curses.color_pair(5))
+            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - strlen/2, ldap_type, curses.color_pair(5))
             screen.refresh()
         else:
             screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, "error", curses.color_pair(3))

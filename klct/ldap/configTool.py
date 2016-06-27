@@ -148,7 +148,7 @@ def retrieve_server_info(conn):
             try:
                 server_type = conn.response[0]['attributes']['structuralObjectClass']
             except:
-                server_type = "N/A"
+                server_type = "No server type found. (This usually means the server type is AD)"
             return {'exit_status': 1, 'version': "Supported LDAP Version: " + version, 'type': "LDAP Server Type: " + server_type}
     except:
         pass
