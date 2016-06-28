@@ -581,7 +581,7 @@ def menu_show_list_user_object_classes(screen):
         base_dn = configuration_dict["suffix"]
         if configuration_dict.has_key("user_id_attribute"):
             user_id_attribute = configuration_dict["user_id_attribute"]
-            return_values = configTool.list_user_related_OC(conn, base_dn, user_id_attribute)
+            return_values = configTool.list_user_related_OC(conn, configuration_dict["user_tree_dn"], user_id_attribute)
             screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(retrieving_string) / 2,
                           "                                                   ")
             if return_values['exit_status'] == 1:
