@@ -635,6 +635,7 @@ def menu_input_user_attributes(screen):
 def validate_user_dn_input(string):
     """Validate user tree dn?
     Check to see that ou= is not put in prefix, and no comma at end?"""
+    pass
 
 
 def menu_show_list_user_object_classes(screen):
@@ -727,11 +728,13 @@ def menu_get_specific_user(screen):
     object_class = configuration_dict["user_object_class"]
     user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
     name_msg_prompt = "What is the user name you would like to get?"
-    name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
+    name = my_raw_input(screen, screen_dims[0]/2 - 2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
     return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
     if return_values["exit_status"] == 1:
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
+        users = return_values["users"]
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, users)
     # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
@@ -785,7 +788,7 @@ def menu_show_list_group_object_classes(screen):
         num_obj_classes = len(object_classes_list)
         choice = my_numb_input(screen, screen_dims[0] / 2 + num_obj_classes, screen_dims[1] / 2 - 15,
                                "Please choose one of the above.", num_obj_classes)
-        configuration_dict["user_object_class"] = object_classes_list[choice - 1]
+        configuration_dict["group_object_class"] = object_classes_list[choice - 1]
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
@@ -800,15 +803,18 @@ def menu_show_list_group_object_classes(screen):
 def menu_check_group_tree_dn_show_groups(screen):
     screen_dims = setup_menu_call(screen)
     conn = var_dict["conn_info"]["conn"]
-    group_dn = "?"
-    group_id_attribute = "?"
-    object_class = "?"
-    limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
+    group_dn = configuration_dict["group_tree_dn"]
+    group_id_attribute = configuration_dict["group_id_attribute"]
+    object_class = configuration_dict["group_object_class"]
+    limit_prompt = "How many groups would you like to see?"
+    limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt) # needs to be fixed later
     return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
     if return_values["exit_status"] == 1:
-        menu_options[9] = u"Check Group Tree DN and Show List of Groups ✓"
+        menu_options[9] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[9] = curses.color_pair(7)
-    # FIX ME PLEASE
+        list_of_groups = return_values["groups"]
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, list_of_groups)
+    # FIX ME
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -819,16 +825,21 @@ def menu_check_group_tree_dn_show_groups(screen):
 def menu_get_specific_group(screen):
     screen_dims = setup_menu_call(screen)
     conn = var_dict["conn_info"]["conn"]
-    group_dn = "?"
-    group_id_attribute = "?"
-    object_class = "?"
-    group_name_attribute = "?"
-    name = "?"
+    group_dn = configuration_dict["group_tree_dn"]
+    group_id_attribute = configuration_dict["group_id_attribute"]
+    object_class = configuration_dict["group_object_class"]
+    group_name_attribute = configuration_dict["group_name_attribute"]
+    name_msg_prompt = "What is the group name you would like to get?"
+    name = my_raw_input(screen, screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(name_msg_prompt), name_msg_prompt)
     return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
     if return_values["exit_status"] == 1:
-        menu_options[10] = u"7. Check User Tree DN and Show List of Users ✓"
+        groups = return_values["group"]
+        display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/2 - 8, groups)
+        menu_options[10] = u"12. Get Specific Group ✓"
         menu_color[10] = curses.color_pair(7)
-    # FIX ME PLEASE
+    else:
+        pass
+        # fix me, error during call
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -837,10 +848,6 @@ def menu_get_specific_group(screen):
 
 
 def menu_additional_config_options(screen):
-    print("NEEDS IMPLEMENTATION")
-
-
-def menu_show_config(screen):
     print("NEEDS IMPLEMENTATION")
 
 
