@@ -85,7 +85,6 @@ def display_list_with_numbers(screen, y, x, list):
         screen.addstr(y + i, x, elem_string)
 
 
-
 def show_instructions(screen):
     """Displays the starting instructions prior to the menu display."""
     curses.curs_set(0)
@@ -194,6 +193,9 @@ def setup_menu_call(screen):
     return screen.getmaxyx()
 
 
+def end_menu_call(screen, current_step):
+    pass
+
 def ip_not_exists(screen, screen_dims):
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 26,
                   "No valid IP found. Please complete the previous step", curses.A_BOLD | curses.color_pair(3))
@@ -279,8 +281,12 @@ def adv_ldap_setup_prompts(screen, max_yx):
     return [host_ip, port_numb, user_name, pass_wd, tls_y_or_n, tls_cert_path]
 
 
-def adv_ldap_success(screen, conn_info, max_yx):
+def adv_ldap_success(screen, conn_info, max_yx, tls_cert_path=0):
     var_dict["conn_info"] = conn_info
+    if tls_cert_path != 0:
+        configuration_dict["tls_cacertfile"] = tls_cert_path
+        show_console_in_status_window()
+        screen.refresh()
     screen.addstr(max_yx[0] / 2 - 7, max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
@@ -427,7 +433,10 @@ def menu_check_ldap_connection_adv(screen, skip=0):
             conn_info = configTool.connect_LDAP_server(host_ip, port_numb, user_name, pass_wd, tls_y_or_n,
                                                        tls_cert_path)
             if conn_info['exit_status'] == 1:
-                adv_ldap_success(screen, conn_info, max_yx)
+                if tls_cert_path != None:
+                    adv_ldap_success(screen, conn_info, max_yx, tls_cert_path)
+                else:
+                    adv_ldap_success(screen, conn_info, max_yx)
             else:  # error occurred during ldap ping
                 adv_ldap_fail(screen, conn_info, max_yx)
         else:
@@ -684,6 +693,9 @@ def menu_check_user_tree_dn_show_users(screen):
     if return_values["exit_status"] == 1:
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
+        list_of_users = return_values["users"]
+        display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/2 - 8, list_of_users)
+        screen.refresh()
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -693,11 +705,12 @@ def menu_check_user_tree_dn_show_users(screen):
 def menu_get_specific_user(screen):
     screen_dims = setup_menu_call(screen)
     conn = var_dict["conn_info"]["conn"]
-    user_dn = "?"
+    user_dn = configuration_dict["user_tree_dn"]
     user_id_attribute = configuration_dict["user_id_attribute"]
-    object_class = "?"
+    object_class = configuration_dict["user_object_class"]
     user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
-    name = "?"
+    name_msg_prompt = "What is the user name you would like to get?"
+    name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
     return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
     if return_values["exit_status"] == 1:
         menu_options[7] = u"8. Get a Specific User ✓"
@@ -710,13 +723,53 @@ def menu_get_specific_user(screen):
         display_menu(screen, status_window)
 
 
+def menu_input_group_attributes(screen):
+    screen_dims = setup_menu_call(screen)
+    # IMPLEMENT ME
+    user_id_attr_prompt = "What is the group id attribute?"
+    user_name_attr_prompt = "What is the group name attribute?"
+    user_tree_dn_prompt = "What is the group tree DN, not including the base DN (i.e. ou=Groups)?"
+
+    group_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+                                     user_id_attr_prompt)
+    configuration_dict["group_id_attribute"] = group_id_attribute
+    show_console_in_status_window()
+    group_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2,
+                                       screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+                                       user_name_attr_prompt)
+    configuration_dict["group_name_attribute"] = group_name_attribute  # VALIDATE INPUT?
+    show_console_in_status_window()
+    group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+                                user_tree_dn_prompt)
+    configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
+    show_console_in_status_window()
+    menu_options[8] = u"9. Input Group ID Attribute/Group Name Attribute ✓"
+    menu_color[8] = curses.color_pair(7)
+    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+    c = screen.getch()
+    while c not in (109, 110):
+        c = screen.getch()
+    if c == 109:
+        display_menu(screen, status_window)
+    elif c == 110:
+        menu_show_list_group_object_classes(screen)
+
+
 def menu_show_list_group_object_classes(screen):
     screen_dims = setup_menu_call(screen)
     conn = var_dict["conn_info"]["conn"]
-    group_dn = "?"
-    group_id_attribute = "?"
+    group_dn = configuration_dict["group_tree_dn"]
+    group_id_attribute = configuration_dict["group_id_attribute"]
     return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
     if return_values["exit_status"] == 1:
+        object_classes_list = return_values['objectclasses']
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 15, object_classes_list)
+        num_obj_classes = len(object_classes_list)
+        choice = my_numb_input(screen, screen_dims[0] / 2 + num_obj_classes, screen_dims[1] / 2 - 15,
+                               "Please choose one of the above.", num_obj_classes)
+        configuration_dict["user_object_class"] = object_classes_list[choice - 1]
+        show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
     # FIX ME PLEASE
@@ -866,6 +919,8 @@ def display_menu(screen, status_window):
                 menu_show_list_user_object_classes(screen)
             elif option_num == 6:
                 menu_check_user_tree_dn_show_users(screen)
+            elif option_num == 8:
+                menu_input_group_attributes(screen)
             elif option_num == 13:
                 menu_create_config(screen)
             elif option_num == 14:
