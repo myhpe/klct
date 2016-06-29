@@ -495,7 +495,7 @@ def menu_get_server_info(screen):
     else:
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
-        server_info_dict = configTool.retrieve_server_info(conn_info["conn"])
+        server_info_dict = configTool.retrieve_server_info(conn_info["conn"], server)
         if server_info_dict["exit_status"] == 1:
             menu_options[2] = u"3. Get Server Information ✓"
             menu_color[2] = curses.color_pair(7)
