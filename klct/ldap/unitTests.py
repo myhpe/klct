@@ -16,6 +16,8 @@ class TestConfigTool(unittest.TestCase):
     bad_port = "invalid_port"
 
     AD_server = "10.1.31.0"
+    AD_server_tls = "ad01.keystone.cdl.hp.com"
+    AD_server_tls_path = "/etc/keystone/domains/mydomain/ca.pem"
     AD_user = "LdapQuery"
     AD_pass = "hpcsqa50"
     AD_base_dn = "dc=keystone,dc=cdl,dc=hp,dc=com"
@@ -111,7 +113,8 @@ class TestConfigTool(unittest.TestCase):
     def test_bad_password(self):
         self.assertEqual(configTool.connect_LDAP_server(self.AD_server, None, self.AD_user, self.bad_password, 'n', "")['message'], "Invalid log in info")
     
-#TODO: add tls tests
+    def test_AD_tls(self):
+        self.assertEqual(configTool.connect_LDAP_server(self.AD_server_tls, None, self.AD_user, self.AD_pass, 'y', self.AD_server_tls_path)['message'], "Successfully connected!")
 
     ad = configTool.setup_connection(AD_server, None, "LdapQuery", "hpcsqa50", 'n', "")
     openLdap = configTool.setup_connection(OpenLdap_server, None, "", "", 'n', "")
