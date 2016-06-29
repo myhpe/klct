@@ -186,11 +186,13 @@ def my_numb_input(screen, y, x, prompt_string, limit=None):
     else:
         return int(numb_input)
 
-def setup_menu_call(screen):
+def setup_menu_call(screen, title=""):
     """Typically called at start of a menu method.
     Clears screen and returns max y and max x in tuple (max_y, max_x)."""
     screen.clear()
-    return screen.getmaxyx()
+    screen_dims = screen.getmaxyx()
+    screen.addstr(screen_dims[0]/2 - 10, screen_dims[1]/2 - len(title)/2, title, curses.A_BOLD | curses.A_UNDERLINE)
+    return screen_dims
 
 
 def end_menu_call(screen, current_step):
@@ -320,7 +322,7 @@ def adv_ldap_fail(screen, conn_info, max_yx):
         menu_check_ldap_connection_adv(screen)
 
 def prompt_base_dn(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "Prompt Base Distinguished Name")
     conn_info = var_dict["conn_info"]
     conn = conn_info['conn']
     prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
@@ -371,8 +373,7 @@ def show_console_in_status_window():
 def menu_ping_ldap_ip(screen):
     """Displays a screen prompting user for IP address and then
     pings that IP address to see if it able to send a response."""
-    screen_dims = setup_menu_call(screen)
-
+    screen_dims = setup_menu_call(screen, "1. Enter/Validate LDAP Server IP")
     success = "Successfully pinged given IP address."
     fail = "Unsuccessfully pinged given IP address."
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
@@ -446,7 +447,7 @@ def menu_check_ldap_connection_basic(screen):
 
 
 def menu_check_ldap_connection_adv(screen, skip=0):
-    max_yx = setup_menu_call(screen)
+    max_yx = setup_menu_call(screen, "2. Check Connection to LDAP Server")
     if not configuration_dict.has_key("url"):
         ip_not_exists(screen, max_yx)
     else:
@@ -484,7 +485,7 @@ def menu_check_ldap_connection_adv(screen, skip=0):
 def menu_get_server_info(screen):
     """Displays server information on screen.
     Currently only displays version and type, but later will add information."""
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "3. Get Server Information")
     if var_dict["conn_info"] == "none":
         error_msg = "No LDAP server found. Press 'm' to go to menu."
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
@@ -523,7 +524,7 @@ def menu_get_server_info(screen):
 
 def menu_check_ldap_suffix(screen):
     """If failure, may be due to invalid credentials. May want to alert user of this later on."""
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "4. Check LDAP Suffix")
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
@@ -598,7 +599,7 @@ def menu_check_ldap_suffix(screen):
 
 
 def menu_input_user_attributes(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "5. Input User ID Attribute/User Name Attribute")
     # IMPLEMENT ME
     user_id_attr_prompt = "What is the user id attribute?"
     user_name_attr_prompt = "What is the user name attribute?"
@@ -639,7 +640,7 @@ def validate_user_dn_input(string):
 
 
 def menu_show_list_user_object_classes(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "6. Show List of User-Related ObjectClasses")
     screen.refresh()
     if var_dict["conn_info"] == "none" or not configuration_dict.has_key("suffix"):
         prompt_string = "No connection to server found or no suffix. Press 'm' to go to menu."
@@ -700,7 +701,7 @@ def menu_show_list_user_object_classes(screen):
 
 
 def menu_check_user_tree_dn_show_users(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "7. Check User Tree DN and Show List of Users")
     conn = var_dict["conn_info"]["conn"]
     user_tree_dn = configuration_dict["user_tree_dn"]
     user_id_attribute = configuration_dict["user_id_attribute"]
@@ -721,7 +722,7 @@ def menu_check_user_tree_dn_show_users(screen):
         display_menu(screen,status_window)
 
 def menu_get_specific_user(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "8. Get a Specific User")
     conn = var_dict["conn_info"]["conn"]
     user_dn = configuration_dict["user_tree_dn"]
     user_id_attribute = configuration_dict["user_id_attribute"]
@@ -744,7 +745,7 @@ def menu_get_specific_user(screen):
 
 
 def menu_input_group_attributes(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "9. Input Group ID Attribute/Group Name Attribute")
     # IMPLEMENT ME
     user_id_attr_prompt = "What is the group id attribute?"
     user_name_attr_prompt = "What is the group name attribute?"
@@ -777,7 +778,7 @@ def menu_input_group_attributes(screen):
 
 
 def menu_show_list_group_object_classes(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "10. Show List of Group Related ObjectClasses")
     conn = var_dict["conn_info"]["conn"]
     group_dn = configuration_dict["group_tree_dn"]
     group_id_attribute = configuration_dict["group_id_attribute"]
@@ -801,7 +802,7 @@ def menu_show_list_group_object_classes(screen):
 
 
 def menu_check_group_tree_dn_show_groups(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "11. Check Group Tree DN and Show List of Groups")
     conn = var_dict["conn_info"]["conn"]
     group_dn = configuration_dict["group_tree_dn"]
     group_id_attribute = configuration_dict["group_id_attribute"]
@@ -823,7 +824,7 @@ def menu_check_group_tree_dn_show_groups(screen):
 
 
 def menu_get_specific_group(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "12. Get Specific Group")
     conn = var_dict["conn_info"]["conn"]
     group_dn = configuration_dict["group_tree_dn"]
     group_id_attribute = configuration_dict["group_id_attribute"]
@@ -848,11 +849,11 @@ def menu_get_specific_group(screen):
 
 
 def menu_additional_config_options(screen):
-    print("NEEDS IMPLEMENTATION")
+    screen_dims = setup_menu_call(screen, "13. Add Additional Configuration Options")
 
 
 def menu_create_config(screen):
-    screen_dims = setup_menu_call(screen)
+    screen_dims = setup_menu_call(screen, "14. Save/Create Configuration File")
     data = configuration_dict
     string_prompt = "Please specify a file name."
     path = my_raw_input(screen, screen_dims[0]/2, screen_dims[1]/2 - len(string_prompt)/2, string_prompt)
@@ -943,8 +944,18 @@ def display_menu(screen, status_window):
                 menu_show_list_user_object_classes(screen)
             elif option_num == 6:
                 menu_check_user_tree_dn_show_users(screen)
+            elif option_num == 7:
+                menu_get_specific_user(screen)
             elif option_num == 8:
                 menu_input_group_attributes(screen)
+            elif option_num == 9:
+                menu_show_list_group_object_classes(screen)
+            elif option_num == 10:
+                menu_check_group_tree_dn_show_groups(screen)
+            elif option_num == 11:
+                menu_get_specific_group(screen)
+            elif option_num == 12:
+                menu_additional_config_options(screen)
             elif option_num == 13:
                 menu_create_config(screen)
             elif option_num == 14:
