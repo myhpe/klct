@@ -621,17 +621,18 @@ def menu_show_list_user_object_classes(screen):
             display_menu(screen, status_window)
 
 
-
 def menu_check_user_tree_dn_show_users(screen):
     screen_dims = setup_menu_call(screen)
     conn = var_dict["conn_info"]["conn"]
     user_tree_dn = configuration_dict["user_tree_dn"]
     user_id_attribute = configuration_dict["user_id_attribute"]
-    object_class = "TEMPORARY"
+    object_class = configuration_dict["user_object_class"]
     limit_prompt = "How many users would you like to see?"
     limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
     return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
-    # FIX ME PLEASE
+    if return_values["exit_status"] == 1:
+        menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
+        menu_color[6] = curses.color_pair(7)
     c = screen.getch()
     while c != (109):
         c = screen.getch()
@@ -647,6 +648,9 @@ def menu_get_specific_user(screen):
     user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
     name = "?"
     return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+    if return_values["exit_status"] == 1:
+        menu_options[7] = u"8. Get a Specific User ✓"
+        menu_color[7] = curses.color_pair(7)
     # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
@@ -661,6 +665,9 @@ def menu_show_list_group_object_classes(screen):
     group_dn = "?"
     group_id_attribute = "?"
     return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    if return_values["exit_status"] == 1:
+        menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
+        menu_color[9] = curses.color_pair(7)
     # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
@@ -677,6 +684,9 @@ def menu_check_group_tree_dn_show_groups(screen):
     object_class = "?"
     limit = my_numb_input(screen, 0, 0, "what") # needs to be fixed later
     return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    if return_values["exit_status"] == 1:
+        menu_options[9] = u"Check Group Tree DN and Show List of Groups ✓"
+        menu_color[9] = curses.color_pair(7)
     # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
@@ -694,6 +704,9 @@ def menu_get_specific_group(screen):
     group_name_attribute = "?"
     name = "?"
     return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    if return_values["exit_status"] == 1:
+        menu_options[10] = u"7. Check User Tree DN and Show List of Users ✓"
+        menu_color[10] = curses.color_pair(7)
     # FIX ME PLEASE
     c = screen.getch()
     while c != (109):
