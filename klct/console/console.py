@@ -313,6 +313,41 @@ def adv_ldap_fail(screen, conn_info, max_yx):
     elif char == 114:
         menu_check_ldap_connection_adv(screen)
 
+def prompt_base_dn(screen):
+    screen_dims = setup_menu_call(screen)
+    conn_info = var_dict["conn_info"]
+    conn = conn_info['conn']
+    prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
+    base_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_str) / 2, prompt_str)
+    screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Validating suffix...",
+                  curses.color_pair(5) | curses.A_BOLD)
+    screen.refresh()
+    results = configTool.check_LDAP_suffix(conn, base_dn)
+    screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "                    ")
+    if results["exit_status"] == 1:
+        configuration_dict["suffix"] = base_dn
+        menu_options[3] = u"4. Check LDAP Suffix ✓"
+        menu_color[3] = curses.color_pair(7)
+        message_color = 6
+        show_console_in_status_window()
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
+                      curses.color_pair(message_color) | curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 25,
+                      "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+    else:
+        message_color = 3
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
+                      curses.color_pair(message_color) | curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
+                      "Press 'r' to retry this step, or 'm' for menu.")
+        c = screen.getch()
+        while c not in (109, 114):
+            c = screen.getch()
+        if c == 109:
+            display_menu(screen, status_window)
+        elif c == 114:
+            menu_check_ldap_suffix(screen)
+
 
 """MAIN METHODS"""
 
@@ -491,37 +526,7 @@ def menu_check_ldap_suffix(screen):
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "                   ")
         if ret_vals["exit_status"] == 0:
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
-            conn_info = var_dict["conn_info"]
-            conn = conn_info['conn']
-            prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
-            base_dn = my_raw_input(screen, screen_dims[0] / 2+2, screen_dims[1] / 2 - len(prompt_str) / 2, prompt_str)
-            screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 10, "Validating suffix...",
-                         curses.color_pair(5) | curses.A_BOLD)
-            screen.refresh()
-            results = configTool.check_LDAP_suffix(conn, base_dn)
-            screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 10, "                    ")
-            if results["exit_status"] == 1:
-                configuration_dict["suffix"] = base_dn
-                menu_options[3] = u"4. Check LDAP Suffix ✓"
-                menu_color[3] = curses.color_pair(7)
-                message_color = 6
-                show_console_in_status_window()
-                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
-                              curses.color_pair(message_color) | curses.A_BOLD)
-                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
-                              "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
-            else:
-                message_color = 3
-                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(message_color) | curses.A_BOLD)
-                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 23,
-                              "Press 'r' to retry this step, or 'm' for menu.")
-                c = screen.getch()
-                while c not in (109, 114):
-                    c = screen.getch()
-                if c == 109:
-                    display_menu(screen, status_window)
-                elif c == 114:
-                    menu_check_ldap_suffix(screen)
+            prompt_base_dn(screen)
 
         elif ret_vals["exit_status"] == 1:
             base_dn = ret_vals['base_dn']
@@ -530,7 +535,12 @@ def menu_check_ldap_suffix(screen):
             menu_color[3] = curses.color_pair(7)
             show_console_in_status_window()
             screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - (len(base_dn) - 8), base_dn + " is your base dn.")
-            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+            y_n = prompt_char_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 17,
+                                    "Is this information correct? [y/n]", ('y', 'n'))
+            if y_n == 'y':
+                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+            else:
+                prompt_base_dn(screen)
 
         c = screen.getch()
         while c not in (109, 110):
