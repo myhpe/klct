@@ -167,8 +167,8 @@ def get_LDAP_suffix(server):
     Returns the base dn of the ldap server
     """
     try:
-        base_dn = server.info.naming_contexts[0]
-        return {'exit_status': 0, 'base_dn': base_dn}
+        base_dn = str(server.info.naming_contexts[0])
+        return {'exit_status': 1, 'base_dn': base_dn}
     except:
         return {'exit_status': 0, 'error': sys.exc_info}
 
