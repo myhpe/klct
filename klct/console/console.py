@@ -254,7 +254,7 @@ def adv_ldap_setup_prompts(screen, max_yx):
     if userpw_y_or_n == 'y':
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         # if want password hidden as "*" change my_raw_input to my_pw_input
-        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 23,
+        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22,
                                "Please type your password.")
         tls_y_coord = max_yx[0] / 2 + 4
     else:
@@ -342,6 +342,7 @@ def menu_ping_ldap_ip(screen):
     screen.refresh()
 
     temp_bool = configTool.ping_LDAP_server(ip_string)
+    screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "                        ")
     if temp_bool == 1 and ip_string != "":
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(success) / 2,
                       success, curses.color_pair(6))
@@ -394,6 +395,7 @@ def menu_check_ldap_connection_basic(screen):
             screen.refresh()
 
             conn_info = configTool.connect_LDAP_server_basic(host_ip, port_numb)
+            screen.addstr(screen_dims[0] / 2 - 7, screen_dims[1] / 2 - 18, "                                       ")
             if conn_info['exit_status'] == 1:
                 basic_ldap_menu_success(screen, conn_info, screen_dims)
             else: # error occurred during ldap ping
@@ -426,6 +428,7 @@ def menu_check_ldap_connection_adv(screen, skip=0):
             screen.refresh()
             conn_info = configTool.connect_LDAP_server(host_ip, port_numb, user_name, pass_wd, tls_y_or_n,
                                                        tls_cert_path)
+            screen.addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "                                       ")
             if conn_info['exit_status'] == 1:
                 adv_ldap_success(screen, conn_info, max_yx)
             else:  # error occurred during ldap ping
@@ -485,6 +488,7 @@ def menu_check_ldap_suffix(screen):
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "Fetching base dn...", curses.color_pair(5))
         server = var_dict["conn_info"]["server"]
         ret_vals = configTool.get_LDAP_suffix(server)
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "                   ")
         if ret_vals["exit_status"] == 0:
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
             conn_info = var_dict["conn_info"]
@@ -495,20 +499,21 @@ def menu_check_ldap_suffix(screen):
                          curses.color_pair(5) | curses.A_BOLD)
             screen.refresh()
             results = configTool.check_LDAP_suffix(conn, base_dn)
+            screen.addstr(screen_dims[0] / 2 + 4, screen_dims[1] / 2 - 10, "                    ")
             if results["exit_status"] == 1:
                 configuration_dict["suffix"] = base_dn
                 menu_options[3] = u"4. Check LDAP Suffix ✓"
                 menu_color[3] = curses.color_pair(7)
                 message_color = 6
                 show_console_in_status_window()
-                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
+                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'],
                               curses.color_pair(message_color) | curses.A_BOLD)
-                screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
                               "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
             else:
                 message_color = 3
-                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(message_color) | curses.A_BOLD)
-                screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 23,
+                screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(message_color) | curses.A_BOLD)
+                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 23,
                               "Press 'r' to retry this step, or 'm' for menu.")
                 c = screen.getch()
                 while c not in (109, 114):
@@ -524,8 +529,8 @@ def menu_check_ldap_suffix(screen):
             menu_options[3] = u"4. Check LDAP Suffix ✓"
             menu_color[3] = curses.color_pair(7)
             show_console_in_status_window()
-            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - (len(base_dn) - 8), base_dn + " is your base dn.")
-            screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - (len(base_dn) - 8), base_dn + " is your base dn.")
+            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
 
         c = screen.getch()
         while c not in (109, 110):
@@ -590,7 +595,7 @@ def menu_input_user_attributes(screen):
     configuration_dict["user_name_attribute"] = user_name_attribute # VALIDATE INPUT?
     show_console_in_status_window()
 
-    user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+    user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
                                      user_tree_dn_prompt)
     configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
     show_console_in_status_window()
@@ -624,6 +629,7 @@ def menu_show_list_user_object_classes(screen):
         display_menu(screen, status_window)
     else:
         retrieving_string = "Retrieving list of object classes..."
+        blnk_retrieve_str = "                                    "
         screen.addstr(screen_dims[0]/2 - 2, screen_dims[1]/2 - len(retrieving_string)/2, retrieving_string,
                       curses.color_pair(5))
         screen.refresh()
@@ -633,11 +639,11 @@ def menu_show_list_user_object_classes(screen):
         if configuration_dict.has_key("user_id_attribute"):
             user_id_attribute = configuration_dict["user_id_attribute"]
             return_values = configTool.list_user_related_OC(conn, configuration_dict["user_tree_dn"], user_id_attribute)
-            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(retrieving_string) / 2,
-                          "                                                   ")
+            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(blnk_retrieve_str) / 2, blnk_retrieve_str)
             if return_values['exit_status'] == 1:
                 menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
                 menu_color[5] = curses.color_pair(7)
+                screen.addstr(screen_dims[0] / 2 - 1, screen_dims[1] / 2 - 15, "User Object classes:")
                 object_classes_list = return_values['objectclasses']
                 display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/2 - 15, object_classes_list)
                 num_obj_classes = len(object_classes_list)
@@ -660,6 +666,7 @@ def menu_show_list_user_object_classes(screen):
                 elif c == 114:
                     menu_input_user_attributes(screen)
         else:
+            screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(blnk_retrieve_str) / 2, blnk_retrieve_str)
             error_prompt = "Please input the user id attribute in step 5."
             screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(error_prompt) / 2, error_prompt,
                           curses.color_pair(3) | curses.A_BOLD)
