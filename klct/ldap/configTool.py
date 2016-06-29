@@ -57,8 +57,11 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
         return_values['exit_status'] = 1
         return_values['message'] = "Successfully connected!"
     except ldap3.LDAPSocketOpenError as err:
-        return_values['message'] = "Failed to connect due to invalid socket."
-        return_values['error'] = err
+        if port_number != 636 and want_tls == 'y':
+            return_values['message'] = "Invalid socket: Connecting with TLS may require a different port number."
+        else:
+            return_values['message'] = "Failed to connect due to invalid socket."
+            return_values['error'] = err
     except ldap3.LDAPInvalidPortError as err:
         return_values['message'] = "Invalid Port"
         return_values['error'] = err
@@ -131,14 +134,22 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     return conn_info
 
 
-def retrieve_server_info(conn):
+def retrieve_server_info(conn, server):
     """
     Retrieves the information related to the server passed in.
     """
     try:
         assert conn.closed is not True
+        serverinfo = open("serverinfo.txt", "w+") #note: doesn't matter that we overwrite serverinfo.txt bc users personal files should never be in this directory
+        serverschema = open("serverschema.txt", "w+")
+        print >>serverinfo, server.info
+        print >>serverschema, server.schema
+        serverinfo.close()
+        serverschema.close()
+
         if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True:
             version = ""
+            server_type = ""
             i = 0
             try:
                 version_result = conn.response[0]['attributes']['supportedLDAPVersion']
@@ -153,11 +164,14 @@ def retrieve_server_info(conn):
             try:
                 server_type = conn.response[0]['attributes']['structuralObjectClass']
             except:
-                server_type = "No server type found. (This usually means the server type is AD)"
+                if str(server.info).lower().find("microsoft") != -1 and str(server.info).lower().find("active directory") != -1: 
+                    server_type = "Active Directory"
+                else:
+                    server_type = "No server type found. (This usually means the server type is AD)"
             return {'exit_status': 1, 'version': "Supported LDAP Version: " + version, 'type': "LDAP Server Type: " + server_type}
     except:
         pass
-    return {'exit_status': 0, 'version': None, 'type': None}
+    return {'exit_status': 0, 'version': None, 'type': None, 'error': sys.exc_info()}
     #dict = {'info': server.info, 'schema': server.schema}
     #return dict
 
@@ -167,8 +181,8 @@ def get_LDAP_suffix(server):
     Returns the base dn of the ldap server
     """
     try:
-        base_dn = server.info.naming_contexts[0]
-        return {'exit_status': 0, 'base_dn': base_dn}
+        base_dn = str(server.info.naming_contexts[0])
+        return {'exit_status': 1, 'base_dn': base_dn}
     except:
         return {'exit_status': 0, 'error': sys.exc_info}
 
@@ -238,7 +252,7 @@ def list_group_related_OC(conn, group_dn, group_id_attribute):
     try:
         assert conn.closed is not True
         search_filter = create_filter([group_id_attribute], 1)
-        if conn.search(search_base=group_dn, search_filter='('+group_id_attribute+'=testgroup1)', attributes=['objectclass']) is True:
+        if conn.search(search_base=group_dn, search_filter=search_filter, attributes=['objectclass']) is True:
             return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
     except:
         pass
