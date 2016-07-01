@@ -76,6 +76,7 @@ var_dict = {"conn_info": "none",
 
 """HELPER METHODS"""
 
+
 def display_list_with_numbers(screen, y, x, list):
     """Elements in list must be string."""
     num_elements = len(list)
@@ -95,6 +96,7 @@ def display_list_with_numbers_test(screen, y, x, list):
         # elem_i[index] = ' '
         elem_string = "{i}. {elem}".format(i=i+1, elem=elem_i)
         screen.addstr(y + i, x, elem_string)
+
 
 def show_instructions(screen):
     """Displays the starting instructions prior to the menu display."""
@@ -197,6 +199,7 @@ def my_numb_input(screen, y, x, prompt_string, limit=None):
     else:
         return int(numb_input)
 
+
 def setup_menu_call(screen, title=""):
     """Typically called at start of a menu method.
     Clears screen and returns max y and max x in tuple (max_y, max_x)."""
@@ -224,10 +227,10 @@ def end_menu_call(screen, current_step):
                     13: menu_additional_config_options,
                     14: menu_create_config
     }
-    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
-                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 28,
+                  "Press 'n' for next step, 'r' to retry, or 'm' for menu.", curses.A_BOLD)
     character = screen.getch()
-    while character not in (109, 110):
+    while character not in (109, 110, 114):
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu(screen, status_window)
@@ -237,6 +240,7 @@ def end_menu_call(screen, current_step):
         command_menu[current_step](screen)
     #
     # command_string = "Enter one of the following commands.\n{cmd_one}\n{cmd_two}\n{cmd_three}".format()
+
 
 def ip_not_exists(screen, screen_dims):
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 26,
@@ -359,7 +363,7 @@ def adv_ldap_fail(screen, conn_info, max_yx):
     if char == 109:
         display_menu(screen, status_window)
     elif char == 114:
-        menu_check_ldap_connection_adv(screen)
+        menu_check_ldap_connection_adv(screen, 1)
 
 def prompt_base_dn(screen):
     screen_dims = setup_menu_call(screen, "Prompt Base Distinguished Name")
@@ -662,15 +666,7 @@ def menu_input_user_attributes(screen):
     menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
     menu_color[4] = curses.color_pair(7)
 
-    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
-                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
-    c = screen.getch()
-    while c not in (109, 110):
-        c = screen.getch()
-    if c == 109:
-        display_menu(screen, status_window)
-    elif c == 110:
-        menu_show_list_user_object_classes(screen)
+    end_menu_call(screen, 5)
 
 
 def validate_user_dn_input(string):
@@ -747,46 +743,76 @@ def menu_show_list_user_object_classes(screen):
             menu_check_user_tree_dn_show_users(screen)
 
 
+def check_user_config_dict(screen, screen_dims):
+    if var_dict["conn_info"] == "none":
+        no_conn_info_msg = "No LDAP server found. Please complete steps 1 and 2."
+        screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - len(no_conn_info_msg)/2, no_conn_info_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        if not configuration_dict.has_key("user_tree_dn") or not configuration_dict.has_key(
+                "user_id_attribute") or not configuration_dict.has_key("user_object_class"):
+            no_user_info_msg = "Could not find user attribute information. Please complete step 5."
+            screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(no_user_info_msg)/2, no_user_info_msg,
+                          curses.color_pair(3) | curses.A_BOLD)
+        return False
+    if not configuration_dict.has_key("user_tree_dn") or not configuration_dict.has_key("user_id_attribute") or not configuration_dict.has_key("user_object_class"):
+        no_user_info_msg = ""
+        screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - len(no_user_info_msg), no_user_info_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        return False
+    return True
+
+
 def menu_check_user_tree_dn_show_users(screen):
     screen_dims = setup_menu_call(screen, "7. Check User Tree DN and Show List of Users")
-    conn = var_dict["conn_info"]["conn"]
-    user_tree_dn = configuration_dict["user_tree_dn"]
-    user_id_attribute = configuration_dict["user_id_attribute"]
-    object_class = configuration_dict["user_object_class"]
-    limit_prompt = "How many users would you like to see?"
-    limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt)
-    return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    if check_user_config_dict(screen, screen_dims):
+        conn = var_dict["conn_info"]["conn"]
+        user_tree_dn = configuration_dict["user_tree_dn"]
+        user_id_attribute = configuration_dict["user_id_attribute"]
+        object_class = configuration_dict["user_object_class"]
+        limit_prompt = "How many users would you like to see?"
+        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt)
+        return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    else :
+        return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["users"]
         display_list_with_numbers_test(screen, screen_dims[0]/2, screen_dims[1]/8, list_of_users)
         screen.refresh()
-
-    end_menu_call(screen, 7)
+        end_menu_call(screen, 7)
+    else:
+        err_msg = "Unable to retrieve users"
+        screen.addstr(screen_dims[0]/2 - 2, screen_dims[1]/2 - len(err_msg)/2, err_msg, curses.color_pair(3)| curses.A_BOLD)
+        end_menu_call(screen, 7)
 
 def menu_get_specific_user(screen):
     screen_dims = setup_menu_call(screen, "8. Get a Specific User")
-    conn = var_dict["conn_info"]["conn"]
-    user_dn = configuration_dict["user_tree_dn"]
-    user_id_attribute = configuration_dict["user_id_attribute"]
-    object_class = configuration_dict["user_object_class"]
-    user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
-    name_msg_prompt = "What is the user name you would like to get?"
-    name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
-    return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+    if check_user_config_dict(screen, screen_dims):
+        conn = var_dict["conn_info"]["conn"]
+        user_dn = configuration_dict["user_tree_dn"]
+        user_id_attribute = configuration_dict["user_id_attribute"]
+        object_class = configuration_dict["user_object_class"]
+        user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
+        name_msg_prompt = "What is the user name you would like to get?"
+        name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
+        return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+    else:
+        return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
-        users = return_values["users"]
-        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, users)
-    # FIX ME PLEASE
-    end_menu_call(screen, 8)
+        user = return_values["user"]
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, user)
+        end_menu_call(screen, 8)
+    else:
+        err_msg = "Unable to retrieve user"
+        screen.addstr(screen_dims[0]/2 - 2, screen_dims[1]/2 - len(err_msg)/2, err_msg, curses.color_pair(3)| curses.A_BOLD)
+        end_menu_call(screen, 8)
 
 
 def menu_input_group_attributes(screen):
     screen_dims = setup_menu_call(screen, "9. Input Group ID Attribute/Group Name Attribute")
-    # IMPLEMENT ME
     user_id_attr_prompt = "What is the group id attribute?"
     user_name_attr_prompt = "What is the group name attribute?"
     user_tree_dn_prompt = "What is the group tree DN, not including the base DN (i.e. ou=Groups)?"
@@ -811,12 +837,34 @@ def menu_input_group_attributes(screen):
     end_menu_call(screen, 9)
 
 
+def check_group_config_dict(screen, screen_dims):
+    if var_dict["conn_info"] == "none":
+        no_conn_info_msg = "No LDAP server found. Please complete steps 1 and 2."
+        screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - len(no_conn_info_msg)/2, no_conn_info_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key(
+                "group_id_attribute") or not configuration_dict.has_key("group_object_class"):
+            no_user_info_msg = "Could not find group attribute information. Please complete step 5."
+            screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(no_user_info_msg)/2, no_user_info_msg,
+                          curses.color_pair(3) | curses.A_BOLD)
+        return False
+    if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key("group_id_attribute") or not configuration_dict.has_key("group_object_class"):
+        no_user_info_msg = ""
+        screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - len(no_user_info_msg), no_user_info_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        return False
+    return True
+
+
 def menu_show_list_group_object_classes(screen):
     screen_dims = setup_menu_call(screen, "10. Show List of Group Related ObjectClasses")
-    conn = var_dict["conn_info"]["conn"]
-    group_dn = configuration_dict["group_tree_dn"]
-    group_id_attribute = configuration_dict["group_id_attribute"]
-    return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    if check_group_config_dict(screen, screen_dims):
+        conn = var_dict["conn_info"]["conn"]
+        group_dn = configuration_dict["group_tree_dn"]
+        group_id_attribute = configuration_dict["group_id_attribute"]
+        return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+    else:
+        return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         object_classes_list = return_values['objectclasses']
         display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 15, object_classes_list)
@@ -827,47 +875,63 @@ def menu_show_list_group_object_classes(screen):
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
-    # FIX ME PLEASE
-    end_menu_call(screen, 10)
+        end_menu_call(screen, 10)
+    else:
+        err_msg = "Unable to retrieve group object classes"
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(err_msg) / 2, err_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        end_menu_call(screen, 10)
 
 
 def menu_check_group_tree_dn_show_groups(screen):
     screen_dims = setup_menu_call(screen, "11. Check Group Tree DN and Show List of Groups")
-    conn = var_dict["conn_info"]["conn"]
-    group_dn = configuration_dict["group_tree_dn"]
-    group_id_attribute = configuration_dict["group_id_attribute"]
-    object_class = configuration_dict["group_object_class"]
-    limit_prompt = "How many groups would you like to see?"
-    limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt) # needs to be fixed later
-    return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    if check_group_config_dict(screen, screen_dims):
+        conn = var_dict["conn_info"]["conn"]
+        group_dn = configuration_dict["group_tree_dn"]
+        group_id_attribute = configuration_dict["group_id_attribute"]
+        object_class = configuration_dict["group_object_class"]
+        limit_prompt = "How many groups would you like to see?"
+        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
+        return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+    else:
+        return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[9] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[9] = curses.color_pair(7)
         list_of_groups = return_values["groups"]
         display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1]/4, list_of_groups)
-    # FIX ME
-    end_menu_call(screen, 11)
+        end_menu_call(screen, 11)
+    else:
+        err_msg = "Unable to retrieve groups"
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(err_msg) / 2, err_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        end_menu_call(screen, 11)
+
 
 def menu_get_specific_group(screen):
     screen_dims = setup_menu_call(screen, "12. Get Specific Group")
-    conn = var_dict["conn_info"]["conn"]
-    group_dn = configuration_dict["group_tree_dn"]
-    group_id_attribute = configuration_dict["group_id_attribute"]
-    object_class = configuration_dict["group_object_class"]
-    group_name_attribute = configuration_dict["group_name_attribute"]
-    name_msg_prompt = "What is the group name you would like to get?"
-    name = my_raw_input(screen, screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(name_msg_prompt), name_msg_prompt)
-    return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    if check_group_config_dict(screen, screen_dims):
+        conn = var_dict["conn_info"]["conn"]
+        group_dn = configuration_dict["group_tree_dn"]
+        group_id_attribute = configuration_dict["group_id_attribute"]
+        object_class = configuration_dict["group_object_class"]
+        group_name_attribute = configuration_dict["group_name_attribute"]
+        name_msg_prompt = "What is the group name you would like to get?"
+        name = my_raw_input(screen, screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(name_msg_prompt), name_msg_prompt)
+        return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+    else:
+        return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         groups = return_values["group"]
         display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/4, groups)
         menu_options[10] = u"12. Get Specific Group ✓"
         menu_color[10] = curses.color_pair(7)
+        end_menu_call(screen, 12)
     else:
-        pass
-        # fix me, error during call
-
-    end_menu_call(screen, 12)
+        err_msg = "Unable to retrieve group"
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(err_msg) / 2, err_msg,
+                      curses.color_pair(3) | curses.A_BOLD)
+        end_menu_call(screen, 12)
 
 
 def menu_additional_config_options(screen):
