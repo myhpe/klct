@@ -4,8 +4,16 @@ import locale
 import os.path
 import sys
 import yaml
-sys.path.insert(0, '../ldap')
-import configTool
+
+if __name__ == "__main__" and __package__ is None:
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.append(parent_dir)
+
+    import ldap.configTool as configTool
+    import log.log as log
+
+# sys.path.insert(0, '../ldap')
+# import configTool
 
 
 """SET UP"""
