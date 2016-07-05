@@ -7,6 +7,10 @@ import ldap3
 from ldap3 import Server, Connection, ALL
 import yaml
 
+#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#os.sys.path.append(parent_dir)
+import log.log as log
+
 
 def check_valid_IP(host_name):
     """
@@ -15,13 +19,16 @@ def check_valid_IP(host_name):
     """
     try:
         socket.inet_aton(host_name)
+        log.success("Valid IP/Host Name entered")
         return 1
     except socket.error:
         pass
     try:
         socket.inet_pton(socket.AF_INET6, host_name)
+        log.success("Valid IPv6 address entered")
         return 1
     except socket.error:
+        log.failure("Invalid IP/Host Name entered")
         return 0
 
 
@@ -31,49 +38,69 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
     Note: unbind the returned connection when finished using socket
     Note: need to find a way to check validation of certificate, eg. expiration, etc
     """
-    return_values = {'exit_status': 0, 'message': [], 'error': [], 'server': [], 'conn': []}
+    return_values = {'exit_status': 0, 'message': None, 'error': None, 'server': None, 'conn': None}
     if port_number is None and want_tls == 'n':
+        log.success("tls conection not required, setting default port to 389")
         port_number = 389
     elif port_number is None and want_tls == 'y':
+        log.success("tls conection not required, setting default port to 636")
         port_number = 636
     try:
+        log.success("Attempting to create server object with port " + str(port_number))
         if want_tls == 'n':
             return_values['server'] = Server(host_name, port=port_number, get_info=ALL)
         else:
+            log.success("Attempting to create tls object with certificate file " + tls_cert_path)
+            try:
+                subprocess.check_output(["openssl", "x509", "-checkend", "120", "-noout", "-in", tls_cert_path], stderr=subprocess.STDOUT, universal_newlines=True)
+                log.success("Tls certificate is valid")
+            except:
+                log.failure("Tls certificate has expired or will expire within the next 2 minutes")
+                return_values['message'] = "Tls certificate has expired or will expire within the next 2 minutes"
+                return return_values
+
             tls_object = ldap3.Tls(ca_certs_file=tls_cert_path, validate=ssl.CERT_REQUIRED)
             return_values['server'] = Server(host_name, port=port_number, use_ssl=True, tls=tls_object, get_info=ALL)
-        #print("\nTrying to connect...")
-        #print(server)
-        return_values['conn'] = Connection(return_values['server'], version=3, user=user_name, password=password)
-        #print("connection started")
-        #conn.open() #bind implies open
+            log.success("Successfully created tls object")
+        log.success("Successfully created server object")
+        log.success("Attempting to create connection socket")
+        return_values['conn'] = Connection(return_values['server'], user=user_name, password=password)
+        log.success("Successfully created socket")
+        log.success("Attempting to bind to socket")
         if not return_values['conn'].bind():
-            return 0, "bind failed", return_values['conn'].results
+            log.failure("Failed to bind to socket")
+            return_values['message'] = "Failed to bind to socket (Invalid Log in credentials)"
+            return return_values
+        log.success("Successfully bound to socket")
         if want_tls == 'y':
-            #print("starting tls\n")
-            #conn.open()
+            log.success("Attempting to start tls on connection")
             return_values['conn'].start_tls()
-        #print(conn)
+            log.success("Successfully started tls")
         return_values['exit_status'] = 1
         return_values['message'] = "Successfully connected!"
+        log.success(str(return_values['message']))
+        #log.success("results: " + return_values['conn'].results)
+        return return_values
     except ldap3.LDAPSocketOpenError as err:
         if port_number != 636 and want_tls == 'y':
             return_values['message'] = "Invalid socket: Connecting with TLS may require a different port number."
         else:
             return_values['message'] = "Failed to connect due to invalid socket."
-            return_values['error'] = err
+        return_values['error'] = err
     except ldap3.LDAPInvalidPortError as err:
         return_values['message'] = "Invalid Port"
-        return_values['error'] = err
-    except AttributeError as err:
-        return_values['message'] = "Invalid log in info"
         return_values['error'] = err
     except ldap3.LDAPPasswordIsMandatoryError as err:
         return_values['message'] = "Please enter a password"
         return_values['error'] = err
+    except ldap3.core.exceptions.LDAPStartTLSError as err:
+        return_values['message'] = "Unable to start TLS"
+        return_values['error'] = err
     except:
         return_values['message'] = "Failed to connect due to unknown reasons"
         return_values['error'] = sys.exc_info()
+    if return_values['error'] is not None:
+        log.failure("Error: " + str(return_values['error']))
     return return_values
 
 
@@ -94,8 +121,11 @@ def ping_LDAP_server(host_name):
     """
     Checks if the given hostName is valid, and pings it.
     """
+    log.success("Initializing ping sequence to \"" + host_name + "\"")
     try:
+        old_host = host_name
         host_name = socket.gethostbyname(host_name)
+        log.success("Converted \"" + old_host + " to an ip: " + host_name)
     except socket.gaierror:
         pass
 
@@ -108,8 +138,10 @@ def ping_LDAP_server(host_name):
         try:
             subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
             response = 1
+            log.success("successfully pinged \"" + host_name + "\"")
         except subprocess.CalledProcessError:
             response = 0
+            log.failure("unsuccessfully pinged \"" + host_name + "\"")
     return response
 
 
@@ -128,6 +160,7 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     Attempts to connect to the provided hostName and port number, default port is 389 if none provided, using the provided user name and pass.
     Note: tls not working
     """
+    log.success("Initializing connection to \"" + host_name + "\"")
     conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
     #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
