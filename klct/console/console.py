@@ -581,7 +581,6 @@ def menu_check_ldap_suffix(screen):
         if ret_vals["exit_status"] == 0:
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
             prompt_base_dn(screen)
-
         elif ret_vals["exit_status"] == 1:
             base_dn = ret_vals['base_dn']
             configuration_dict["suffix"] = base_dn
@@ -648,6 +647,7 @@ def menu_input_user_attributes(screen):
     user_id_attr_prompt = "What is the user id attribute?"
     user_name_attr_prompt = "What is the user name attribute?"
     user_tree_dn_prompt = "What is the user tree DN, not including the base DN (i.e. ou=Users)?"
+    alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (i.e. ou=Users,dc=hp,dc=com)"
 
     user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
                                      user_id_attr_prompt)
@@ -658,11 +658,16 @@ def menu_input_user_attributes(screen):
                                        user_name_attr_prompt)
     configuration_dict["user_name_attribute"] = user_name_attribute # VALIDATE INPUT?
     show_console_in_status_window()
-
-    user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
-                                     user_tree_dn_prompt)
-    configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
-    show_console_in_status_window()
+    if configuration_dict.has_key("suffix"):
+        user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
+                                         user_tree_dn_prompt)
+        configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
+        show_console_in_status_window()
+    else:
+        user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
+                                    user_tree_dn_prompt)
+        configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
+        show_console_in_status_window()
     menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
     menu_color[4] = curses.color_pair(7)
 
@@ -813,23 +818,29 @@ def menu_get_specific_user(screen):
 
 def menu_input_group_attributes(screen):
     screen_dims = setup_menu_call(screen, "9. Input Group ID Attribute/Group Name Attribute")
-    user_id_attr_prompt = "What is the group id attribute?"
-    user_name_attr_prompt = "What is the group name attribute?"
-    user_tree_dn_prompt = "What is the group tree DN, not including the base DN (i.e. ou=Groups)?"
-
-    group_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
-                                     user_id_attr_prompt)
+    group_id_attr_prompt = "What is the group id attribute?"
+    group_name_attr_prompt = "What is the group name attribute?"
+    group_tree_dn_prompt = "What is the group tree DN, not including the base DN (i.e. ou=Groups)?"
+    alt_group_tree_dn_prompt = "What is the group tree DN, including the base DN (i.e. ou=Groups,dc=hp,dc=com)?"
+    group_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
+                                     group_id_attr_prompt)
     configuration_dict["group_id_attribute"] = group_id_attribute
     show_console_in_status_window()
     group_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2,
-                                       screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
-                                       user_name_attr_prompt)
+                                       screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
+                                       group_name_attr_prompt)
     configuration_dict["group_name_attribute"] = group_name_attribute  # VALIDATE INPUT?
     show_console_in_status_window()
-    group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
-                                user_tree_dn_prompt)
-    configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
-    show_console_in_status_window()
+    if configuration_dict.has_key("suffix"):
+        group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
+                                     group_tree_dn_prompt)
+        configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
+        show_console_in_status_window()
+    else:
+        group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(alt_group_tree_dn_prompt) / 2,
+                                     alt_group_tree_dn_prompt)
+        configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
+        show_console_in_status_window()
     menu_options[8] = u"9. Input Group ID Attribute/Group Name Attribute ✓"
     menu_color[8] = curses.color_pair(7)
     screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
