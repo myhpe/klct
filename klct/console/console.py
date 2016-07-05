@@ -955,6 +955,23 @@ def menu_get_specific_group(screen):
 
 def menu_additional_config_options(screen):
     screen_dims = setup_menu_call(screen, "13. Add Additional Configuration Options")
+    use_pool_prompt = "What is use_pool? (i.e. True/False)"
+    user_enabled_attribute_prompt = "What is user_enabled_attribute? (i.e. userAccountControl)"
+    user_enabled_mask_prompt = "What is user_enabled_mask? (i.e. 2)"
+    user_enabled_default_prompt = "What is user_enabled_default? (i.e. 512)"
+    configuration_dict["use_pool"] = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(use_pool_prompt)/2, use_pool_prompt)
+    show_console_in_status_window()
+    configuration_dict["user_enabled_attribute"] = my_raw_input(screen, screen_dims[0] / 2,
+                                                                screen_dims[1] / 2 - len(
+                                                                    user_enabled_attribute_prompt) / 2,
+                                                                user_enabled_attribute_prompt)
+    show_console_in_status_window()
+    configuration_dict["user_enabled_mask"] = my_numb_input(screen, screen_dims[0] / 2 + 2,
+                                                            screen_dims[1] / 2 - len(user_enabled_mask_prompt) / 2,
+                                                            user_enabled_mask_prompt)
+    show_console_in_status_window()
+    configuration_dict["user_enabled_default"] = my_numb_input(screen, screen_dims[0]/2 + 4, screen_dims[1]/2 - len(user_enabled_default_prompt)/2, user_enabled_default_prompt)
+    show_console_in_status_window()
     end_menu_call(screen, 13)
 
 
