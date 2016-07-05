@@ -868,7 +868,9 @@ def check_group_config_dict(screen, screen_dims):
             screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(no_user_info_msg)/2, no_user_info_msg,
                           curses.color_pair(3) | curses.A_BOLD)
         return False
-    if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key("group_id_attribute") or not configuration_dict.has_key("group_object_class"):
+    if not configuration_dict.has_key("group_tree_dn") \
+            or not configuration_dict.has_key("group_id_attribute")\
+            or not configuration_dict.has_key("group_object_class"):
         no_user_info_msg = ""
         screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - len(no_user_info_msg), no_user_info_msg,
                       curses.color_pair(3) | curses.A_BOLD)
@@ -938,7 +940,8 @@ def menu_get_specific_group(screen):
         group_name_attribute = configuration_dict["group_name_attribute"]
         name_msg_prompt = "What is the group name you would like to get?"
         name = my_raw_input(screen, screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(name_msg_prompt), name_msg_prompt)
-        return_values = configTool.get_group(conn, group_dn, group_id_attribute, object_class, group_name_attribute, name)
+        return_values = configTool.get_group(conn, group_dn, group_id_attribute,
+                                             object_class, group_name_attribute, name)
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
@@ -960,7 +963,8 @@ def menu_additional_config_options(screen):
     user_enabled_attribute_prompt = "What is user_enabled_attribute? (i.e. userAccountControl)"
     user_enabled_mask_prompt = "What is user_enabled_mask? (i.e. 2)"
     user_enabled_default_prompt = "What is user_enabled_default? (i.e. 512)"
-    configuration_dict["use_pool"] = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(use_pool_prompt)/2, use_pool_prompt)
+    configuration_dict["use_pool"] = my_raw_input(screen, screen_dims[0]/2 - 2,
+                                                  screen_dims[1]/2 - len(use_pool_prompt)/2, use_pool_prompt)
     show_console_in_status_window()
     configuration_dict["user_enabled_attribute"] = my_raw_input(screen, screen_dims[0] / 2,
                                                                 screen_dims[1] / 2 - len(
@@ -971,7 +975,9 @@ def menu_additional_config_options(screen):
                                                             screen_dims[1] / 2 - len(user_enabled_mask_prompt) / 2,
                                                             user_enabled_mask_prompt)
     show_console_in_status_window()
-    configuration_dict["user_enabled_default"] = my_numb_input(screen, screen_dims[0]/2 + 4, screen_dims[1]/2 - len(user_enabled_default_prompt)/2, user_enabled_default_prompt)
+    configuration_dict["user_enabled_default"] = my_numb_input(screen, screen_dims[0]/2 + 4,
+                                                               screen_dims[1]/2 - len(user_enabled_default_prompt)/2,
+                                                               user_enabled_default_prompt)
     show_console_in_status_window()
     end_menu_call(screen, 13)
 
