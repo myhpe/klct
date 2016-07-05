@@ -799,6 +799,7 @@ def menu_check_user_tree_dn_show_users(screen):
         screen.addstr(screen_dims[0]/2 - 2, screen_dims[1]/2 - len(err_msg)/2, err_msg, curses.color_pair(3)| curses.A_BOLD)
         end_menu_call(screen, 7)
 
+
 def menu_get_specific_user(screen):
     screen_dims = setup_menu_call(screen, "8. Get a Specific User")
     if check_user_config_dict(screen, screen_dims):
