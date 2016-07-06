@@ -197,7 +197,7 @@ def retrieve_server_info(conn, server):
             try:
                 server_type = conn.response[0]['attributes']['structuralObjectClass']
             except:
-                if str(server.info).lower().find("microsoft") != -1 and str(server.info).lower().find("active directory") != -1:
+                if str(server.info).lower().find("microsoft") != -1 and str(server.info).lower().find("active directory") != -1: 
                     server_type = "Active Directory"
                 else:
                     server_type = "No server type found. (This usually means the server type is AD)"
