@@ -8,10 +8,6 @@ from ldap3 import Server, Connection, ALL
 import exceptions
 import yaml
 
-print("abspath: %s", os.path.abspath(__file__))
-print("dirname: %s", os.path.dirname(os.path.abspath(__file__)))
-print("package: %s", __package__)
-print("name: %s", __name__)
 if __name__ == "configTool" and __package__ is None:
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.append(parent_dir)
