@@ -6,6 +6,15 @@ import sys
 import ldap3
 from ldap3 import Server, Connection, ALL
 import yaml
+
+print("abspath: %s", os.path.abspath(__file__))
+print("dirname: %s", os.path.dirname(os.path.abspath(__file__)))
+print("package: %s", __package__)
+print("name: %s", __name__)
+if __name__ == "configTool" and __package__ is None:
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.append(parent_dir)
+
 import log.log as log
 
 
@@ -43,7 +52,7 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
         log.success("tls conection not required, setting default port to 636")
         port_number = 636
     try:
-        log.success("Attempting to create server object with port " + str(port_number))
+        log.success("Attempting to create server object with port: " + str(port_number) + " username: " + str(user_name) + " password: " + str(password) + " tls_requested: " + want_tls + " certificate path: " + str(tls_cert_path))
         if want_tls == 'n':
             return_values['server'] = Server(host_name, port=port_number, get_info=ALL)
         else:
@@ -122,7 +131,7 @@ def ping_LDAP_server(host_name):
     try:
         old_host = host_name
         host_name = socket.gethostbyname(host_name)
-        log.success("Converted \"" + old_host + " to an ip: " + host_name)
+        log.success("Converted \"" + old_host + "\" to an ip: \"" + host_name + "\"")
     except socket.gaierror:
         pass
 
@@ -135,10 +144,10 @@ def ping_LDAP_server(host_name):
         try:
             subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
             response = 1
-            log.success("successfully pinged \"" + host_name + "\"")
+            log.success("Successfully pinged \"" + host_name + "\"")
         except subprocess.CalledProcessError:
             response = 0
-            log.failure("unsuccessfully pinged \"" + host_name + "\"")
+            log.failure("Unsuccessfully pinged \"" + host_name + "\"")
     return response
 
 
@@ -168,15 +177,22 @@ def retrieve_server_info(conn, server):
     """
     Retrieves the information related to the server passed in.
     """
+    return_values = {'exit_status': 0, 'version': None, 'type': None, 'error': None}
     try:
+        log.success("Attempting to retrieve server Info")
         assert conn.closed is not True
+        log.success("Connection socket is open")
+        log.success("Creating serverinfo and serverschema files")
         serverinfo = open("serverinfo.txt", "w+") #note: doesn't matter that we overwrite serverinfo.txt bc users personal files should never be in this directory
         serverschema = open("serverschema.txt", "w+")
+        log.success("Dumping serverinfo and serverschema to the respective files")
         print >>serverinfo, server.info
         print >>serverschema, server.schema
+        log.success("Closing serverinfo and serverschema files")
         serverinfo.close()
         serverschema.close()
 
+        log.success("Searching for ldap attributes")
         if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True:
             version = ""
             server_type = ""
@@ -189,19 +205,30 @@ def retrieve_server_info(conn, server):
                     version = version + str(conn.response[0]['attributes']['supportedLDAPVersion'][i])
                 else:
                     version = version + str(conn.response[0]['attributes']['supportedLDAPVersion'][i+1])
+                log.success("Found supported ldap versions: " + version)
             except:
+                log.failure("Unable to find supported ldap versions")
                 version = "N/A"
             try:
                 server_type = conn.response[0]['attributes']['structuralObjectClass']
+                log.success("Found ldap server type: " + server_type)
             except:
-                if str(server.info).lower().find("microsoft") != -1 and str(server.info).lower().find("active directory") != -1: 
+                if str(server.info).lower().find("microsoft") != -1 and str(server.info).lower().find("active directory") != -1:
+                    log.success("Found ldap server type: Active Directory")
                     server_type = "Active Directory"
                 else:
+                    log.failure("Unable to find ldap server type")
                     server_type = "No server type found. (This usually means the server type is AD)"
-            return {'exit_status': 1, 'version': "Supported LDAP Version: " + version, 'type': "LDAP Server Type: " + server_type}
+            return_values['exit_status'] = 1
+            return_values['version'] = "Supported LDAP Version: " + version
+            return_values['type'] = "LDAP Server Type: " + server_type
+            return return_values
+    except exceptions.AssertionError as err:
+        return_vaules['error'] = err
     except:
-        pass
-    return {'exit_status': 0, 'version': None, 'type': None, 'error': sys.exc_info()}
+        return_values['error'] = sys.exc_info()
+    log.failure(return_values['error'])
+    return return_values
     #dict = {'info': server.info, 'schema': server.schema}
     #return dict
 
