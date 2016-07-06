@@ -1,4 +1,0 @@
-2016-07-06 09:21:53,462 - log.log - INFO - log : 39 - Initializing ping sequence to ""
-2016-07-06 09:21:53,463 - log.log - INFO - log : 39 - Converted " to an ip: 0.0.0.0
-2016-07-06 09:21:53,463 - log.log - INFO - log : 39 - Valid IP/Host Name entered
-2016-07-06 09:21:53,473 - log.log - INFO - log : 39 - successfully pinged "0.0.0.0"
