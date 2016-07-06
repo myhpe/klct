@@ -6,9 +6,6 @@ import sys
 import ldap3
 from ldap3 import Server, Connection, ALL
 import yaml
-
-#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#os.sys.path.append(parent_dir)
 import log.log as log
 
 
