@@ -22,10 +22,10 @@ if __name__ == "__main__" and __package__ is None:
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
 stdscr = curses.initscr()  # terminal screen
 stdscr_dimensions = stdscr.getmaxyx()  # returns tuple (y,x) of current screen resolution
-stdscr.keypad(True)  # enables arrow keys and multi-byte sequences i.e.(f1-f12,page up, page down)
+stdscr.keypad(True)  # enables arrow keys and multi-byte sequences e.g.(f1-f12,page up, page down)
 stdscr.scrollok(True)
 curses.noecho()
-start_instruction = "LDAP Configuration Tool. Press 'm' to go to the menu."
+start_instruction = "HOS Keystone-LDAP Configuration Tool. Press 'm' to go to the menu."
 if curses.has_colors():  # enable coloring
     curses.start_color()
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -115,7 +115,7 @@ def show_instructions(screen):
     screen.clear()
     char_press = 0
     screen.addstr(screen_dimensions[0]/2,
-                  screen_dimensions[1]/2 - len(start_instruction)/2, start_instruction)
+                  screen_dimensions[1]/2 - len(start_instruction)/2, start_instruction, curses.A_BOLD)
     while char_press != ord('m'):
         char_press = screen.getch()
     screen.clear()
@@ -132,11 +132,13 @@ def my_raw_input(screen, y, x, prompt_string):
     will show a prompt at (y + 1, x). Currently only able to
     prompt for 20 chars, but can change later."""
     curses.echo() # so user can see
+    curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
     str_input = screen.getstr(y + 1, x + 1, 255)  # 20 = max chars to in string
     curses.noecho()
+    curses.curs_set(False)
     return str_input
 
 
@@ -175,6 +177,7 @@ def prompt_char_input(screen, y, x, prompt_string, list):
     """Prompt for a single character input from user until user gives a char in list.
      Given a (y, x) coordinate, will show a prompt at (y + 1, x)."""
     curses.echo() # no echoing
+    curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
@@ -186,16 +189,17 @@ def prompt_char_input(screen, y, x, prompt_string, list):
         screen.refresh()
         ch_input = screen.getstr(y + 1, x + 1, 1)
     curses.noecho()
+    curses.curs_set(False)
     return ch_input
 
 
 def my_numb_input(screen, y, x, prompt_string, limit=None):
     curses.echo()
+    curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addstr(y + 1, x, ">            ")
     screen.refresh()
     numb_input = screen.getstr(y + 1, x + 1, 10)
-    curses.noecho()
     while not numb_input.isdigit():
         screen.addstr(y, x, "                                                                  ")
         screen.addstr(y + 1, x, ">                                 ")
@@ -203,10 +207,16 @@ def my_numb_input(screen, y, x, prompt_string, limit=None):
         numb_input = screen.getstr(y + 1, x + 1, 10)
     if limit is not None:
         if int(numb_input) > limit:
+            curses.noecho()
+            curses.curs_set(False)
             return my_numb_input(screen, y, x, prompt_string, limit)
         else:
+            curses.noecho()
+            curses.curs_set(False)
             return int(numb_input)
     else:
+        curses.noecho()
+        curses.curs_set(False)
         return int(numb_input)
 
 
@@ -379,7 +389,7 @@ def prompt_base_dn(screen):
     screen_dims = setup_menu_call(screen, "Prompt Base Distinguished Name")
     conn_info = var_dict["conn_info"]
     conn = conn_info['conn']
-    prompt_str = "Please enter the base dn. (i.e. dc=openstack,dc=org)"
+    prompt_str = "Please enter the base dn. (e.g. dc=openstack,dc=org)"
     base_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_str) / 2, prompt_str)
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Validating suffix...",
                   curses.color_pair(5) | curses.A_BOLD)
@@ -656,8 +666,8 @@ def menu_input_user_attributes(screen):
     # IMPLEMENT ME
     user_id_attr_prompt = "What is the user id attribute?"
     user_name_attr_prompt = "What is the user name attribute?"
-    user_tree_dn_prompt = "What is the user tree DN, not including the base DN (i.e. ou=Users)?"
-    alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (i.e. ou=Users,dc=hp,dc=com)"
+    user_tree_dn_prompt = "What is the user tree DN, not including the base DN (e.g. ou=Users)?"
+    alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (e.g. ou=Users,dc=hp,dc=com)"
 
     user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
                                      user_id_attr_prompt)
@@ -831,8 +841,8 @@ def menu_input_group_attributes(screen):
     screen_dims = setup_menu_call(screen, "9. Input Group ID Attribute/Group Name Attribute")
     group_id_attr_prompt = "What is the group id attribute?"
     group_name_attr_prompt = "What is the group name attribute?"
-    group_tree_dn_prompt = "What is the group tree DN, not including the base DN (i.e. ou=Groups)?"
-    alt_group_tree_dn_prompt = "What is the group tree DN, including the base DN (i.e. ou=Groups,dc=hp,dc=com)?"
+    group_tree_dn_prompt = "What is the group tree DN, not including the base DN (e.g. ou=Groups)?"
+    alt_group_tree_dn_prompt = "What is the group tree DN, including the base DN (e.g. ou=Groups,dc=hp,dc=com)?"
     group_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
                                      group_id_attr_prompt)
     configuration_dict["group_id_attribute"] = group_id_attribute
@@ -961,10 +971,10 @@ def menu_get_specific_group(screen):
 
 def menu_additional_config_options(screen):
     screen_dims = setup_menu_call(screen, "13. Add Additional Configuration Options")
-    use_pool_prompt = "What is use_pool? (i.e. True/False)"
-    user_enabled_attribute_prompt = "What is user_enabled_attribute? (i.e. userAccountControl)"
-    user_enabled_mask_prompt = "What is user_enabled_mask? (i.e. 2)"
-    user_enabled_default_prompt = "What is user_enabled_default? (i.e. 512)"
+    use_pool_prompt = "What is use_pool? (e.g. True/False)"
+    user_enabled_attribute_prompt = "What is user_enabled_attribute? (e.g. userAccountControl)"
+    user_enabled_mask_prompt = "What is user_enabled_mask? (e.g. 2)"
+    user_enabled_default_prompt = "What is user_enabled_default? (e.g. 512)"
     configuration_dict["use_pool"] = my_raw_input(screen, screen_dims[0]/2 - 2,
                                                   screen_dims[1]/2 - len(use_pool_prompt)/2, use_pool_prompt)
     show_console_in_status_window()
