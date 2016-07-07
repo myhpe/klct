@@ -333,6 +333,22 @@ def list_object_classes(conn, dn, id_attribute):
     return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
 
 
+def validate_object_class(conn, dn, objectclass):
+    log.success("Searching for object classes")
+    try:
+        assert conn.closed is not True
+        log.success("Connection is open")
+        search_filter = '(objectclass='+objectclass+')'
+        if conn.search(search_base=dn, search_filter=search_filter) is True:
+            log.success(objectclass + " is a valid objectclass")
+    except exceptions.AssertionError as err:
+        log.failure(err)
+        return {'exit_status': 0, 'message': "Connection is closed", 'error': err}
+    except:
+        log.failure(sys.exc_info())
+        return {'exit_status': 0, 'message': objectclass + " is an ivalid objectclass", 'error': sys.exc_info()}
+
+
 def list_entries(conn, dn, id_attribute, objectclass, limit):
     """
     Lists the entries, up to the limit.
