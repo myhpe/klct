@@ -189,7 +189,7 @@ def retrieve_server_info(conn, server):
         serverschema.close()
 
         log.success("Searching for ldap attributes")
-        if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True:
+        if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True and conn.entries:
             version = ""
             server_type = ""
             i = 0
@@ -253,7 +253,7 @@ def check_LDAP_suffix(conn, base_dn):
         log.success("Connection is open")
         search_filter = create_filter(['cn'], 1)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=base_dn, search_filter=search_filter) is True:
+        if conn.search(search_base=base_dn, search_filter=search_filter) is True and conn.entries:
             log.success(base_dn + " is a valid suffix (base DN)")
             return {'exit_status': 1, 'message': base_dn + " is a valid suffix (base DN)"}
         else:
@@ -275,7 +275,7 @@ def validate_info(conn, dn, id_attribute, name_attribute):
         assert conn.closed is not True
         log.success("Connection is open")
 
-        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter='(objectclass=*)', attributes=[ldap3.ALL_ATTRIBUTES], size_limit=1) is True:
+        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter='(objectclass=*)', attributes=[ldap3.ALL_ATTRIBUTES], size_limit=1) is True and conn.entries:
             log.success(dn + " is a valid DN")
             print(conn.entries[0])
             if id_attribute in conn.entries[0]:
@@ -314,7 +314,7 @@ def list_object_classes(conn, dn, id_attribute):
         log.success("Connection is open")
         search_filter = create_filter([id_attribute], 1)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=['objectclass']) is True:
+        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=['objectclass']) is True and conn.entries:
             objclasses_list = []
             for objclass_list in conn.entries:
                 for objclass in objclass_list.objectclass:
@@ -333,6 +333,24 @@ def list_object_classes(conn, dn, id_attribute):
     return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
 
 
+def validate_object_class(conn, dn, objectclass):
+    log.success("Searching for object classes")
+    try:
+        assert conn.closed is not True
+        log.success("Connection is open")
+        search_filter = '(objectclass='+objectclass+')'
+        log.success("Created search filter: " + search_filter)
+        if conn.search(search_base=dn, search_filter=search_filter, size_limit=1) is True and conn.entries:
+            log.success(objectclass + " is a valid objectclass")
+            return {'exit_status': 1, 'message': objectclass + " is a valid objectclass", 'error': None}
+    except exceptions.AssertionError as err:
+        log.failure(err)
+        return {'exit_status': 0, 'message': "Connection is closed", 'error': err}
+    except:
+        log.failure(sys.exc_info())
+    return {'exit_status': 0, 'message': objectclass + " is an invalid objectclass", 'error': sys.exc_info()}
+
+
 def list_entries(conn, dn, id_attribute, objectclass, limit):
     """
     Lists the entries, up to the limit.
@@ -346,7 +364,7 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
             limit = 3
         search_filter = create_filter([objectclass, id_attribute], 2)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, size_limit=limit) is True:
+        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, size_limit=limit) is True and conn.entries:
             log.success("Found list of entries: " + str(conn.entries))
             return {'exit_status': 1, 'entries': conn.entries}
         else:
@@ -369,7 +387,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
         log.success("Connection is open")
         search_filter = create_filter([name_attribute, name, objectclass, id_attribute], 3)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=dn, search_filter=search_filter) is True:
+        if conn.search(search_base=dn, search_filter=search_filter) is True and conn.entries:
             if len(conn.entries) > 1:
                 log.failure("Duplicate entries found for: " + name)
                 return{'exit_status': 0, 'entry': conn.entries, 'error': "Duplicate entries found"}
