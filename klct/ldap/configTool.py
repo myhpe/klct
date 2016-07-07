@@ -8,10 +8,9 @@ from ldap3 import Server, Connection, ALL
 import exceptions
 import yaml
 
-if __name__ == "configTool" and __package__ is None:
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.append(parent_dir)
-
+# if __name__ == "configTool" and __package__ is None:
+#     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     os.sys.path.append(parent_dir)
 import log.log as log
 
 
@@ -234,13 +233,13 @@ def get_LDAP_suffix(server):
     """
     Returns the base dn of the ldap server
     """
-    log.success("Discovering suffix from server information")
+    log.success("Discovering suffix (base DN) from server information")
     try:
         base_dn = str(server.info.naming_contexts[0])
-        log.success("Found suffix: " + base_dn)
+        log.success("Found suffix (base DN): " + base_dn)
         return {'exit_status': 1, 'base_dn': base_dn}
     except:
-        log.failure("Unable to find suffix")
+        log.failure("Unable to find suffix (base DN)")
         return {'exit_status': 0, 'error': sys.exc_info}
 
 
@@ -248,21 +247,40 @@ def check_LDAP_suffix(conn, base_dn):
     """
     Checks that the given base_dn is the correct suffix for the given connection.
     """
-    log.success("Validating given base suffix: " + base_dn)
+    log.success("Validating given base suffix (base DN): " + base_dn)
     try:
         assert conn.closed is not True
         log.success("Connection is open")
         search_filter = create_filter(['cn'], 1)
         log.success("Created search filter: " + search_filter)
         if conn.search(search_base=base_dn, search_filter=search_filter) is True:
-            log.success("Base suffix is verified")
+            log.success("Suffix (base DN) is verified")
             return {'exit_status': 1, 'message': "The given base DN is correct"}
+        else:
+            log.failure(base_dn + " is an invalid suffix (base DN)")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'message': "Connection is closed", 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'message': "The given base DN is not correct", 'error': sys.exc_info()}
+    return {'exit_status': 0, 'message': "The given base DN is not correct", 'error': sys.exc_info()}
+
+def validate_suffix(conn, dn, id_attribute, name_attribute):
+    """
+    Checks that the given dn is valid.
+    """
+    log.success("Validating given DN: " + dn)
+    try:
+        assert conn.closed is not True
+        log.success("connection is open")
+        search_filter = create_filter()
+    except exceptions.AssertionError as err:
+        log.failure(err)
+        return {'exit_status': 0, 'message': "Connection is closed", 'error': err}
+    except:
+        log.failure(sys.exc_info())
+    return {'exit_status': 0, 'message': "", 'error': sys.exc_info()}
+
 
 def list_user_related_OC(conn, user_dn, user_id_attribute):
     """
@@ -277,12 +295,14 @@ def list_user_related_OC(conn, user_dn, user_id_attribute):
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=['objectclass']) is True:
             log.success("Found object classes: " + str(conn.entries[0].objectclass.raw_values))
             return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+        else:
+            log.failure("No user related object classes found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'objectclasses': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
+    return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
 
 
 def list_users(conn, user_dn, user_id_attribute, objectclass, limit):
@@ -301,12 +321,14 @@ def list_users(conn, user_dn, user_id_attribute, objectclass, limit):
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[user_id_attribute], size_limit=limit) is True:
             log.success("Found list of users: " + str(conn.entries))
             return {'exit_status': 1, 'users': conn.entries}
+        else:
+            log.failure("No users found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'users': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'users': None, 'error': sys.exc_info()}
+    return {'exit_status': 0, 'users': None, 'error': sys.exc_info()}
 
 
 def get_user(conn, user_dn, user_id_attribute, objectclass, user_name_attribute, name):
@@ -322,12 +344,14 @@ def get_user(conn, user_dn, user_id_attribute, objectclass, user_name_attribute,
         if conn.search(search_base=user_dn, search_filter=search_filter, attributes=[user_id_attribute, user_name_attribute]) is True:
             log.success("Found user: " + str(conn.entries))
             return {'exit_status': 1, 'user': conn.entries}
+        else:
+            log.failure("User " + name + " not found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'user': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'user': None, 'error': sys.exc_info()}
+    return {'exit_status': 0, 'user': None, 'error': sys.exc_info()}
 
 
 def list_group_related_OC(conn, group_dn, group_id_attribute):
@@ -343,12 +367,14 @@ def list_group_related_OC(conn, group_dn, group_id_attribute):
         if conn.search(search_base=group_dn, search_filter=search_filter, attributes=['objectclass']) is True:
             log.success("Found object classes: " + str(conn.entries[0].objectclass.raw_values))
             return {'exit_status': 1, 'objectclasses': conn.entries[0].objectclass.raw_values}
+        else:
+            log.failure("No group related object classes found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'objectclasses': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
+    return {'exit_status': 0, 'objectclasses': None, 'error': sys.exc_info()}
 
 
 def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
@@ -367,12 +393,14 @@ def list_groups(conn, group_dn, group_id_attribute, objectclass, limit):
         if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[group_id_attribute], size_limit=limit) is True:
             log.success("Found list of groups: " + str(conn.entries))
             return {'exit_status': 1, 'groups': conn.entries}
+        else:
+            log.failure("No groups found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'groups': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'groups': None, 'error': sys.exc_info()}
+    return {'exit_status': 0, 'groups': None, 'error': sys.exc_info()}
 
 
 def get_group(conn, group_dn, group_id_attribute, objectclass, group_name_attribute, name):
@@ -388,12 +416,14 @@ def get_group(conn, group_dn, group_id_attribute, objectclass, group_name_attrib
         if conn.search(search_base=group_dn, search_filter=search_filter, attributes=[group_id_attribute, group_name_attribute]) is True:
             log.success("Found group: " + str(conn.entries))
             return {'exit_status': 1, 'group': conn.entries}
+        else:
+            log.failure("Group " + name + " not found")
     except exceptions.AssertionError as err:
         log.failure(err)
         return {'exit_status': 0, 'group': None, 'error': err}
     except:
         log.failure(sys.exc_info())
-        return {'exit_status': 0, 'group': None, 'error': err}
+    return {'exit_status': 0, 'group': None, 'error': err}
 
 
 def save_config(data, path):
