@@ -82,8 +82,9 @@ temp_dict = {
 
 
 var_dict = {"conn_info": "none",
-            "object_class": "none"}
-
+            "object_class": "none",
+            "status_window": status_window,
+            "status_window_text": status_window_text}
 """HELPER METHODS"""
 
 
@@ -124,7 +125,7 @@ def show_instructions(screen):
     main_window = screen.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1]/4 - 1, 1, 1)
     main_window.keypad(True)
     main_window.scrollok(True)
-    display_menu(main_window, status_window)
+    display_menu(main_window)
 
 
 def my_raw_input(screen, y, x, prompt_string):
@@ -225,7 +226,7 @@ def setup_menu_call(screen, title=""):
     Clears screen and returns max y and max x in tuple (max_y, max_x)."""
     screen.clear()
     screen_dims = screen.getmaxyx()
-    screen.addstr(screen_dims[0]/2 - 10, screen_dims[1]/2 - len(title)/2, title,
+    screen.addstr(screen_dims[0]/6, screen_dims[1]/2 - len(title)/2, title,
                   curses.color_pair(1) | curses.A_BOLD | curses.A_UNDERLINE | curses.A_STANDOUT)
     return screen_dims
 
@@ -253,7 +254,7 @@ def end_menu_call(screen, current_step):
     while character not in (109, 110, 114):
         character = screen.getch()
     if character == 109:  # 109 == m
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif character == 110:  # 114 == r
         command_menu[current_step + 1](screen)
     elif character == 114:
@@ -271,7 +272,7 @@ def ip_not_exists(screen, screen_dims):
     while key_press not in (109, 112):  # 109 == m, 112 == p
         key_press = screen.getch()
     if key_press == 109:
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif key_press == 112:
         menu_ping_ldap_ip(screen)
 
@@ -289,7 +290,7 @@ def basic_ldap_menu_success(screen, conn_info, screen_dims):
     while character != 109:
         character = screen.getch()
     if character == 109:  # 109 == m
-        display_menu(screen, status_window)
+        display_menu(screen)
 
 
 def basic_ldap_menu_fail(screen, conn_info, screen_dims):
@@ -302,7 +303,7 @@ def basic_ldap_menu_fail(screen, conn_info, screen_dims):
     while char not in (109, 114):
         char = screen.getch()
     if char == 109:
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif char == 114:
         menu_check_ldap_connection_basic(screen)
 
@@ -365,7 +366,7 @@ def adv_ldap_success(screen, conn_info, max_yx, tls_cert_path=0):
     while character not in (109, 110):
         character = screen.getch()
     if character == 109:  # 109 == m
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif character == 110:  # 114 == n
         menu_get_server_info(screen)
 
@@ -381,7 +382,7 @@ def adv_ldap_fail(screen, conn_info, max_yx):
     while char not in (109, 114):
         char = screen.getch()
     if char == 109:
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif char == 114:
         menu_check_ldap_connection_adv(screen, 1)
 
@@ -416,7 +417,7 @@ def prompt_base_dn(screen):
         while c not in (109, 114):
             c = screen.getch()
         if c == 109:
-            display_menu(screen, status_window)
+            display_menu(screen)
         elif c == 114:
             menu_check_ldap_suffix(screen)
 
@@ -441,7 +442,7 @@ def menu_ping_ldap_ip(screen):
     success = "Successfully pinged given IP address."
     fail = "Unsuccessfully pinged given IP address."
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
-    ip_string = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_ip_string)/2,
+    ip_string = my_raw_input(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
                   curses.color_pair(5) | curses.A_BLINK)
@@ -471,7 +472,7 @@ def menu_ping_ldap_ip(screen):
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
         temp_char = screen.getch()
     if temp_char == 109:
-        display_menu(screen, status_window)
+        display_menu(screen)
     elif temp_char == 110:
         menu_check_ldap_connection_adv(screen, 1)
     elif temp_char == 114:
@@ -555,7 +556,7 @@ def menu_get_server_info(screen):
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
@@ -581,7 +582,7 @@ def menu_get_server_info(screen):
         while c not in (109, 110):
             c = screen.getch()
         if c == 109:
-            display_menu(screen, status_window)
+            display_menu(screen)
         if c == 110:
             menu_check_ldap_suffix(screen)
 
@@ -592,7 +593,7 @@ def menu_check_ldap_suffix(screen):
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.")
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "Fetching base dn...", curses.color_pair(5))
         server = var_dict["conn_info"]["server"]
@@ -619,7 +620,7 @@ def menu_check_ldap_suffix(screen):
         while c not in (109, 110):
             c = screen.getch()
         if c == 109:
-            display_menu(screen, status_window)
+            display_menu(screen)
         elif c == 110:
             menu_input_user_attributes(screen)
 
@@ -643,7 +644,7 @@ def menu_check_ldap_suffix(screen):
         #     while c not in (109, 110):
         #         c = screen.getch()
         #     if c == 109:
-        #         display_menu(screen, status_window)
+        #         display_menu(screen)
         #     elif c == 110:
         #         menu_input_user_attributes(screen)
         # else:
@@ -656,7 +657,7 @@ def menu_check_ldap_suffix(screen):
         #     while c not in (109, 114):
         #         c = screen.getch()
         #     if c == 109:
-        #         display_menu(screen, status_window)
+        #         display_menu(screen)
         #     elif c == 114:
         #         menu_check_ldap_suffix(screen)
 
@@ -708,7 +709,7 @@ def menu_show_list_user_object_classes(screen):
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_string)/2, prompt_string,
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         retrieving_string = "Retrieving list of object classes..."
         blnk_retrieve_str = "                                    "
@@ -749,7 +750,7 @@ def menu_show_list_user_object_classes(screen):
                 while c not in (109, 114):
                     c = screen.getch()
                 if c == 109:
-                    display_menu(screen, status_window)
+                    display_menu(screen)
                 elif c == 114:
                     menu_input_user_attributes(screen)
         else:
@@ -763,7 +764,7 @@ def menu_show_list_user_object_classes(screen):
         while c not in (109, 110):
             c = screen.getch()
         if c == 109:
-            display_menu(screen, status_window)
+            display_menu(screen)
         elif c == 110:
             menu_check_user_tree_dn_show_users(screen)
 
@@ -1011,10 +1012,10 @@ def menu_create_config(screen):
     while c != (109):
         c = screen.getch()
     if c == 109:
-        display_menu(screen, status_window)
+        display_menu(screen)
 
 
-def display_menu(screen, status_window):
+def display_menu(screen):
     """Displays the menu. Does most of the work for displaying options."""
     screen_dimensions = screen.getmaxyx()
     screen_half_y = screen_dimensions[0]/2
@@ -1022,7 +1023,7 @@ def display_menu(screen, status_window):
     screen.nodelay(0)
     screen.clear()
     screen.box()
-    status_window.box()
+    var_dict["status_window"].box()
     show_console_in_status_window()
     screen.refresh()
 
@@ -1064,9 +1065,63 @@ def display_menu(screen, status_window):
         screen.addstr(screen_half_y + 8, screen_half_x - 25, "15. Exit",
                       menu_highlighting[14] | curses.color_pair(3))
         screen.refresh()
-
         key_press = screen.getch()
-        if key_press == curses.KEY_UP:
+        if key_press == curses.KEY_RESIZE:
+            stdscr.clear()
+            screen.clear()
+            var_dict["status_window"].clear()
+            var_dict["status_window_text"].clear()
+            screen_dimensions = stdscr.getmaxyx()
+            screen = stdscr.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1] / 4 - 1,
+                                   1, 1)
+            screen.keypad(True)
+            var_dict["status_window"] = stdscr.subwin(stdscr_dimensions[0] - 2, stdscr_dimensions[1] / 4 - 2, 1,
+                                          stdscr_dimensions[1] - stdscr_dimensions[1] / 4)
+            status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4, stdscr_dimensions[1] / 4 - 4, 2,
+                                               stdscr_dimensions[1] - stdscr_dimensions[1] / 4 + 1)
+            screen.box()
+
+            main_screen_dimensions = stdscr.getmaxyx()
+            screen_half_y = main_screen_dimensions[0]/2
+            screen_half_x = main_screen_dimensions[1]/2
+            screen.addstr(screen_half_y - 9, screen_half_x - 11,
+                          "LDAP Configuration Menu", curses.A_UNDERLINE | curses.color_pair(1) | curses.A_BOLD)
+            screen.addstr(screen_half_y - 6, screen_half_x - 25,
+                          menu_options[0].encode("utf-8"), menu_highlighting[0] | menu_color[0])
+            screen.addstr(screen_half_y - 5, screen_half_x - 25,
+                          menu_options[1].encode("utf-8"), menu_highlighting[1] | menu_color[1])
+            screen.addstr(screen_half_y - 4, screen_half_x - 25,
+                          menu_options[2].encode("utf-8"), menu_highlighting[2] | menu_color[2])
+            screen.addstr(screen_half_y - 3, screen_half_x - 25,
+                          menu_options[3].encode("utf-8"), menu_highlighting[3] | menu_color[3])
+            screen.addstr(screen_half_y - 2, screen_half_x - 25,
+                          menu_options[4].encode("utf-8"), menu_highlighting[4] | menu_color[4])
+            screen.addstr(screen_half_y - 1, screen_half_x - 25,
+                          menu_options[5].encode("utf-8"), menu_highlighting[5] | menu_color[5])
+            screen.addstr(screen_half_y + 0, screen_half_x - 25,
+                          menu_options[6].encode("utf-8"), menu_highlighting[6] | menu_color[6])
+            screen.addstr(screen_half_y + 1, screen_half_x - 25,
+                          menu_options[7].encode("utf-8"), menu_highlighting[7] | menu_color[7])
+            screen.addstr(screen_half_y + 2, screen_half_x - 25,
+                          menu_options[8].encode("utf-8"), menu_highlighting[8] | menu_color[8])
+            screen.addstr(screen_half_y + 3, screen_half_x - 25,
+                          menu_options[9].encode("utf-8"), menu_highlighting[9] | menu_color[9])
+            screen.addstr(screen_half_y + 4, screen_half_x - 25,
+                          menu_options[10].encode("utf-8"), menu_highlighting[10] | menu_color[10])
+            screen.addstr(screen_half_y + 5, screen_half_x - 25,
+                          menu_options[11].encode("utf-8"), menu_highlighting[11] | menu_color[11])
+            screen.addstr(screen_half_y + 6, screen_half_x - 25,
+                          menu_options[12].encode("utf-8"), menu_highlighting[12] | menu_color[12])
+            screen.addstr(screen_half_y + 7, screen_half_x - 25,
+                          menu_options[13].encode("utf-8"), menu_highlighting[13] | menu_color[13])
+            screen.addstr(screen_half_y + 8, screen_half_x - 25, "15. Exit",
+                          menu_highlighting[14] | curses.color_pair(3))
+            show_console_in_status_window()
+            stdscr.refresh()
+            screen.refresh()
+            status_window.refresh()
+            status_window_text.refresh()
+        elif key_press == curses.KEY_UP:
             option_num = (option_num - 1) % 15
         elif key_press == curses.KEY_DOWN:
             option_num = (option_num + 1) % 15
@@ -1105,7 +1160,7 @@ def display_menu(screen, status_window):
                     var_dict["conn_info"]["conn"].unbind()
                 sys.exit(0)
             else:
-                display_menu(screen, status_window)
+                display_menu(screen)
     curses.curs_set(1)
 curses.wrapper(show_instructions)
 curses.endwin()
