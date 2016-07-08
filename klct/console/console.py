@@ -426,13 +426,15 @@ def prompt_base_dn(screen):
 
 
 def show_console_in_status_window():
-    status_window.box()
-    status_window_text.addstr(0, 0, "Keystone-LDAP Configuration", curses.A_BOLD | curses.A_UNDERLINE)
+    var_dict["status_window"].clear()
+    var_dict["status_window_text"].clear()
+    var_dict["status_window"].box()
+    var_dict["status_window_text"].addstr(0, 0, "Keystone-LDAP Configuration", curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
         configuration_dict_yaml_str = yaml.dump(configuration_dict, stream=None, default_flow_style=False)
-        status_window_text.addstr(1, 0, configuration_dict_yaml_str)
-    status_window.refresh()
-    status_window_text.refresh()
+        var_dict["status_window_text"].addstr(1, 0, configuration_dict_yaml_str)
+    var_dict["status_window"].refresh()
+    var_dict["status_window_text"].refresh()
 
 
 def menu_ping_ldap_ip(screen):
@@ -1075,12 +1077,12 @@ def display_menu(screen):
             screen = stdscr.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1] / 4 - 1,
                                    1, 1)
             screen.keypad(True)
-            var_dict["status_window"] = stdscr.subwin(stdscr_dimensions[0] - 2, stdscr_dimensions[1] / 4 - 2, 1,
-                                          stdscr_dimensions[1] - stdscr_dimensions[1] / 4)
-            status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4, stdscr_dimensions[1] / 4 - 4, 2,
-                                               stdscr_dimensions[1] - stdscr_dimensions[1] / 4 + 1)
+            var_dict["status_window"] = stdscr.subwin(screen_dimensions[0] - 2, screen_dimensions[1] / 4 - 2, 1,
+                                          screen_dimensions[1] - screen_dimensions[1] / 4)
+            var_dict["status_window_text"] = stdscr.subwin(screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
+                                               screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
             screen.box()
-
+            show_console_in_status_window()
             main_screen_dimensions = stdscr.getmaxyx()
             screen_half_y = main_screen_dimensions[0]/2
             screen_half_x = main_screen_dimensions[1]/2
@@ -1116,7 +1118,6 @@ def display_menu(screen):
                           menu_options[13].encode("utf-8"), menu_highlighting[13] | menu_color[13])
             screen.addstr(screen_half_y + 8, screen_half_x - 25, "15. Exit",
                           menu_highlighting[14] | curses.color_pair(3))
-            show_console_in_status_window()
             stdscr.refresh()
             screen.refresh()
             status_window.refresh()
