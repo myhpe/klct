@@ -317,33 +317,30 @@ def adv_ldap_setup_prompts(screen, max_yx):
                                 "Input entered is not a valid port number. Please retry.")
     port_numb = int(temp_str)
 
-    userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22,
-                                      "Does LDAP server require User/Pass? [y/n]", ('y', 'n'))
+    userpw_y_or_n = prompt_char_input(screen, max_yx[0] / 2 - 2, max_yx[1] / 2 - 22, "Does LDAP server require User/Pass? [y/n]", ('y', 'n'))
+    cert_prompt_offset = 6;
     if userpw_y_or_n == 'y':
         user_name = my_raw_input(screen, max_yx[0] / 2, max_yx[1] / 2 - 22, "Please input your username.")
         # if want password hidden as "*" change my_raw_input to my_pw_input
-        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22,
-                               "Please type your password.")
+        pass_wd = my_raw_input(screen, max_yx[0] / 2 + 2, max_yx[1] / 2 - 22, "Please type your password.")
         tls_y_coord = max_yx[0] / 2 + 4
     else:
+        cert_prompt_offset -= 4
         user_name = ""
         pass_wd = ""
         tls_y_coord = max_yx[0] / 2
 
-    tls_y_or_n = prompt_char_input(screen, tls_y_coord, max_yx[1] / 2 - 22,
-                                   "Is TLS enabled? Enter [y/n]", ('y', 'n'))
+    tls_y_or_n = prompt_char_input(screen, tls_y_coord, max_yx[1] / 2 - 22, "Is TLS enabled? Enter [y/n]", ('y', 'n'))
     if tls_y_or_n == 'n':
         tls_cert_path = None
     else:
-        tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
-                                     "Please enter the path of the TLS certificate.")
+        tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + cert_prompt_offset, max_yx[1] / 2 - 22, "Please enter the path of the TLS certificate.")
         while not os.path.isfile(tls_cert_path):
-            screen.addstr(max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
+            screen.addstr(max_yx[0] / 2 + cert_prompt_offset, max_yx[1] / 2 - 22,
                           "                                              ")
-            screen.addstr(max_yx[0] / 2 + 7, max_yx[1] / 2 - 22,
+            screen.addstr(max_yx[0] / 2 + cert_prompt_offset + 1, max_yx[1] / 2 - 22,
                           ">                                              ")
-            tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + 6, max_yx[1] / 2 - 22,
-                                         "File not found. Please try again.")
+            tls_cert_path = my_raw_input(screen, max_yx[0] / 2 + cert_prompt_offset, max_yx[1] / 2 - 22, "File not found. Please try again.")
     return [host_ip, port_numb, user_name, pass_wd, tls_y_or_n, tls_cert_path]
 
 
@@ -385,13 +382,14 @@ def adv_ldap_fail(screen, conn_info, max_yx):
     elif char == 114:
         menu_check_ldap_connection_adv(screen, 1)
 
+
 def prompt_base_dn(screen):
     screen_dims = setup_menu_call(screen, "Prompt Base Distinguished Name")
     conn_info = var_dict["conn_info"]
     conn = conn_info['conn']
     prompt_str = "Please enter the base dn. (e.g. dc=openstack,dc=org)"
     base_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_str) / 2, prompt_str)
-    screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Validating suffix...",
+    screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Validating suffix (base DN)...",
                   curses.color_pair(5) | curses.A_BOLD)
     screen.refresh()
     results = configTool.check_LDAP_suffix(conn, base_dn)
@@ -438,8 +436,6 @@ def menu_ping_ldap_ip(screen):
     """Displays a screen prompting user for IP address and then
     pings that IP address to see if it able to send a response."""
     screen_dims = setup_menu_call(screen, "1. Enter/Validate LDAP Server IP")
-    success = "Successfully pinged given IP address."
-    fail = "Unsuccessfully pinged given IP address."
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
     ip_string = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
@@ -447,24 +443,24 @@ def menu_ping_ldap_ip(screen):
                   curses.color_pair(5) | curses.A_BLINK)
     screen.refresh()
 
-    temp_bool = configTool.ping_LDAP_server(ip_string)
+    results = configTool.ping_LDAP_server(ip_string)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "                        ")
-    if temp_bool == 1 and ip_string != "":
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(success) / 2,
-                      success, curses.color_pair(6))
+    if results['exit_status'] == 1 and ip_string != "":
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2,
+                      results['message'], curses.color_pair(6))
         screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 26,
                       "This IP will automatically be used in the next steps.", curses.color_pair(4))
         screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
-        configuration_dict["url"] = "ldap://" + ip_string
+        configuration_dict["url"] = results['host_name']
         show_console_in_status_window()
-    elif temp_bool == -1:
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
-                      "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
+    # elif results['exit_status'] == 0:
+    #     screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
+    #                   "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
     else:
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(fail) / 2, fail, curses.color_pair(3))
+        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(3))
         screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
                       "Press 'r' to retry this step, or 'm' for menu.")
     temp_char = screen.getch()
@@ -551,7 +547,7 @@ def menu_get_server_info(screen):
     Currently only displays version and type, but later will add information."""
     screen_dims = setup_menu_call(screen, "3. Get Server Information")
     if var_dict["conn_info"] == "none":
-        error_msg = "No LDAP server found. Press 'm' to go to menu."
+        error_msg = "No LDAP server found. Press any key to go to the menu."
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
@@ -664,34 +660,35 @@ def menu_check_ldap_suffix(screen):
 def menu_input_user_attributes(screen):
     screen_dims = setup_menu_call(screen, "5. Input User ID Attribute/User Name Attribute")
     # IMPLEMENT ME
-    user_id_attr_prompt = "What is the user id attribute?"
-    user_name_attr_prompt = "What is the user name attribute?"
-    user_tree_dn_prompt = "What is the user tree DN, not including the base DN (e.g. ou=Users)?"
-    alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (e.g. ou=Users,dc=hp,dc=com)"
-
-    user_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
-                                     user_id_attr_prompt)
-    configuration_dict["user_id_attribute"] = user_id_attribute
-    show_console_in_status_window()
-
-    user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
-                                       user_name_attr_prompt)
-    configuration_dict["user_name_attribute"] = user_name_attribute # VALIDATE INPUT?
-    show_console_in_status_window()
-    if configuration_dict.has_key("suffix"):
-        user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt)/2,
-                                         user_tree_dn_prompt)
-        configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
-        show_console_in_status_window()
+    if var_dict["conn_info"] == "none":
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
+        screen.getch()
+        display_menu(screen, status_window)
     else:
-        user_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
-                                    user_tree_dn_prompt)
-        configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
-        show_console_in_status_window()
-    menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
-    menu_color[4] = curses.color_pair(7)
+        user_id_attr_prompt = "What is the user id attribute?"
+        user_name_attr_prompt = "What is the user name attribute?"
+        user_tree_dn_prompt = "What is the user tree DN, not including the base DN (e.g. ou=Users)?"
+        # alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (e.g. ou=Users,dc=hp,dc=com)"
 
-    end_menu_call(screen, 5)
+        if configuration_dict.has_key("suffix"):
+            user_tree_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,user_tree_dn_prompt)
+            user_id_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_id_attr_prompt)
+            user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_name_attr_prompt)
+        else:
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
+            screen.getch()
+            display_menu(screen, status_window)
+
+        results = configTool.validate_info(var_dict["conn_info"]["conn"], user_tree_dn + "," + configuration_dict["suffix"], user_id_attribute, user_name_attribute)
+        if results["exit_status"] == 1:
+            configuration_dict["user_tree_dn"] = user_tree_dn + "," + configuration_dict["suffix"]
+            configuration_dict["user_id_attribute"] = user_id_attribute
+            configuration_dict["user_name_attribute"] = user_name_attribute  # VALIDATE INPUT?
+            show_console_in_status_window()
+            menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
+            menu_color[4] = curses.color_pair(7)
+        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
+        end_menu_call(screen, 5)
 
 
 def validate_user_dn_input(string):
@@ -704,7 +701,7 @@ def menu_show_list_user_object_classes(screen):
     screen_dims = setup_menu_call(screen, "6. Show List of User-Related ObjectClasses")
     screen.refresh()
     if var_dict["conn_info"] == "none" or not configuration_dict.has_key("suffix"):
-        prompt_string = "No connection to server found or no suffix. Press 'm' to go to menu."
+        prompt_string = "No connection to server found or no suffix (base DN). Press 'm' to go to menu."
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(prompt_string)/2, prompt_string,
                       curses.color_pair(3) | curses.A_BOLD)
         screen.getch()
@@ -720,7 +717,7 @@ def menu_show_list_user_object_classes(screen):
         base_dn = configuration_dict["suffix"]
         if configuration_dict.has_key("user_id_attribute"):
             user_id_attribute = configuration_dict["user_id_attribute"]
-            return_values = configTool.list_user_related_OC(conn, configuration_dict["user_tree_dn"], user_id_attribute)
+            return_values = configTool.list_object_classes(conn, configuration_dict["user_tree_dn"], user_id_attribute)
             screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(blnk_retrieve_str) / 2, blnk_retrieve_str)
             if return_values['exit_status'] == 1:
                 menu_options[5] = u"6. Show List of User-Related ObjectClasses ✓"
@@ -795,15 +792,15 @@ def menu_check_user_tree_dn_show_users(screen):
         user_id_attribute = configuration_dict["user_id_attribute"]
         object_class = configuration_dict["user_object_class"]
         limit_prompt = "How many users would you like to see?"
-        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt)
-        return_values = configTool.list_users(conn, user_tree_dn, user_id_attribute, object_class, limit)
-    else :
+        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt) # andy:need to change offset
+        return_values = configTool.list_entries(conn, user_tree_dn, user_id_attribute, object_class, limit)
+    else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
-        list_of_users = return_values["users"]
-        display_list_with_numbers_test(screen, screen_dims[0]/2, screen_dims[1]/8, list_of_users)
+        list_of_users = return_values["entries"]
+        display_list_with_numbers_test(screen, screen_dims[0]/2, screen_dims[1]/8, list_of_users) # andy: might need to change offset
         screen.refresh()
         end_menu_call(screen, 7)
     else:
@@ -821,15 +818,15 @@ def menu_get_specific_user(screen):
         object_class = configuration_dict["user_object_class"]
         user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
         name_msg_prompt = "What is the user name you would like to get?"
-        name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
-        return_values = configTool.get_user(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
+        name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt) # andy: need to change vertical offset (or change vertical offset of error message)
+        return_values = configTool.get_entry(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
-        user = return_values["user"]
-        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, user)
+        user = return_values["entry"]
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, user) # andy: need to change offset
         end_menu_call(screen, 8)
     else:
         err_msg = "Unable to retrieve user"
@@ -839,50 +836,49 @@ def menu_get_specific_user(screen):
 
 def menu_input_group_attributes(screen):
     screen_dims = setup_menu_call(screen, "9. Input Group ID Attribute/Group Name Attribute")
-    group_id_attr_prompt = "What is the group id attribute?"
-    group_name_attr_prompt = "What is the group name attribute?"
-    group_tree_dn_prompt = "What is the group tree DN, not including the base DN (e.g. ou=Groups)?"
-    alt_group_tree_dn_prompt = "What is the group tree DN, including the base DN (e.g. ou=Groups,dc=hp,dc=com)?"
-    group_id_attribute = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
-                                     group_id_attr_prompt)
-    configuration_dict["group_id_attribute"] = group_id_attribute
-    show_console_in_status_window()
-    group_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2,
-                                       screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
-                                       group_name_attr_prompt)
-    configuration_dict["group_name_attribute"] = group_name_attribute  # VALIDATE INPUT?
-    show_console_in_status_window()
-    if configuration_dict.has_key("suffix"):
-        group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
-                                     group_tree_dn_prompt)
-        configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
-        show_console_in_status_window()
+    if var_dict["conn_info"] == "none":
+        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
+        screen.getch()
+        display_menu(screen, status_window)
     else:
-        group_tree_dn = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(alt_group_tree_dn_prompt) / 2,
-                                     alt_group_tree_dn_prompt)
-        configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
-        show_console_in_status_window()
-    menu_options[8] = u"9. Input Group ID Attribute/Group Name Attribute ✓"
-    menu_color[8] = curses.color_pair(7)
-    screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
-                  "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+        group_id_attr_prompt = "What is the group id attribute?"
+        group_name_attr_prompt = "What is the group name attribute?"
+        group_tree_dn_prompt = "What is the group tree DN, not including the base DN (e.g. ou=Groups)?"
+        # alt_group_tree_dn_prompt = "What is the group tree DN, including the base DN (e.g. ou=Groups,dc=hp,dc=com)?"
+
+        if configuration_dict.has_key("suffix"):
+            group_tree_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2, group_tree_dn_prompt)
+            group_id_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2, group_id_attr_prompt)
+            group_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2, group_name_attr_prompt)
+        else:
+            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
+            screen.getch()
+            display_menu(screen, status_window)
+
+        results = configTool.validate_info(var_dict["conn_info"]["conn"], group_tree_dn + "," + configuration_dict["suffix"], group_id_attribute, group_name_attribute)
+        if results["exit_status"] == 1:
+            configuration_dict["group_id_attribute"] = group_id_attribute
+            configuration_dict["group_name_attribute"] = group_name_attribute
+            configuration_dict["group_tree_dn"] = group_tree_dn + "," + configuration_dict["suffix"]
+            show_console_in_status_window()
+            menu_options[8] = u"9. Input Group ID Attribute/Group Name Attribute ✓"
+            menu_color[8] = curses.color_pair(7)
+    screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
     end_menu_call(screen, 9)
 
 
 def check_group_config_dict(screen, screen_dims):
+    # andy: I don't think this method is correct. should be checking for group_name_attribute instead of objectclass? Also the second nested if statement does nothing.
     if var_dict["conn_info"] == "none":
         no_conn_info_msg = "No LDAP server found. Please complete steps 1 and 2."
         screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - len(no_conn_info_msg)/2, no_conn_info_msg,
                       curses.color_pair(3) | curses.A_BOLD)
-        if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key(
-                "group_id_attribute") or not configuration_dict.has_key("group_object_class"):
-            no_user_info_msg = "Could not find group attribute information. Please complete step 5."
+        if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key("group_id_attribute") or not configuration_dict.has_key("group_object_class"):
+            no_user_info_msg = "Could not find group attribute information. Please complete step 9."
             screen.addstr(screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(no_user_info_msg)/2, no_user_info_msg,
                           curses.color_pair(3) | curses.A_BOLD)
         return False
-    if not configuration_dict.has_key("group_tree_dn") \
-            or not configuration_dict.has_key("group_id_attribute")\
-            or not configuration_dict.has_key("group_object_class"):
+    if not configuration_dict.has_key("group_tree_dn") or not configuration_dict.has_key("group_id_attribute") or not configuration_dict.has_key("group_object_class"):
         no_user_info_msg = ""
         screen.addstr(screen_dims[0]/2 + 2, screen_dims[1]/2 - len(no_user_info_msg), no_user_info_msg,
                       curses.color_pair(3) | curses.A_BOLD)
@@ -892,11 +888,13 @@ def check_group_config_dict(screen, screen_dims):
 
 def menu_show_list_group_object_classes(screen):
     screen_dims = setup_menu_call(screen, "10. Show List of Group Related ObjectClasses")
+    log.success("test method below: ")
+    log.success(check_group_config_dict(screen,screen_dims))
     if check_group_config_dict(screen, screen_dims):
         conn = var_dict["conn_info"]["conn"]
         group_dn = configuration_dict["group_tree_dn"]
         group_id_attribute = configuration_dict["group_id_attribute"]
-        return_values = configTool.list_group_related_OC(conn, group_dn, group_id_attribute)
+        return_values = configTool.list_object_classes(conn, group_dn, group_id_attribute)
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
@@ -926,13 +924,13 @@ def menu_check_group_tree_dn_show_groups(screen):
         object_class = configuration_dict["group_object_class"]
         limit_prompt = "How many groups would you like to see?"
         limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2, limit_prompt)
-        return_values = configTool.list_groups(conn, group_dn, group_id_attribute, object_class, limit)
+        return_values = configTool.list_entries(conn, group_dn, group_id_attribute, object_class, limit)
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         menu_options[9] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[9] = curses.color_pair(7)
-        list_of_groups = return_values["groups"]
+        list_of_groups = return_values["entries"]
         display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1]/4, list_of_groups)
         end_menu_call(screen, 11)
     else:
@@ -952,12 +950,12 @@ def menu_get_specific_group(screen):
         group_name_attribute = configuration_dict["group_name_attribute"]
         name_msg_prompt = "What is the group name you would like to get?"
         name = my_raw_input(screen, screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(name_msg_prompt), name_msg_prompt)
-        return_values = configTool.get_group(conn, group_dn, group_id_attribute,
+        return_values = configTool.get_entry(conn, group_dn, group_id_attribute,
                                              object_class, group_name_attribute, name)
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
-        groups = return_values["group"]
+        groups = return_values["entry"]
         display_list_with_numbers(screen, screen_dims[0]/2, screen_dims[1]/4, groups)
         menu_options[10] = u"12. Get Specific Group ✓"
         menu_color[10] = curses.color_pair(7)
