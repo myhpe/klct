@@ -11,7 +11,7 @@ import yaml
 #
 #     print("parent_dir: %s", parent_dir)
 
-import ldap.configTool as configTool
+import ldap.ldap_service as configTool
 import log.log as log
 
 # sys.path.insert(0, '../ldap')
@@ -795,7 +795,7 @@ def menu_check_user_tree_dn_show_users(screen):
         user_id_attribute = configuration_dict["user_id_attribute"]
         object_class = configuration_dict["user_object_class"]
         limit_prompt = "How many users would you like to see?"
-        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt) # andy:need to change offset
+        limit = my_numb_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/8, limit_prompt)
         return_values = configTool.list_entries(conn, user_tree_dn, user_id_attribute, object_class, limit)
     else:
         return_values = {"exit_status": 0}
@@ -803,7 +803,7 @@ def menu_check_user_tree_dn_show_users(screen):
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
-        display_list_with_numbers_test(screen, screen_dims[0]/2, screen_dims[1]/8, list_of_users) # andy: might need to change offset
+        display_list_with_numbers_test(screen, screen_dims[0]/2, screen_dims[1]/8, list_of_users)
         screen.refresh()
         end_menu_call(screen, 7)
     else:
