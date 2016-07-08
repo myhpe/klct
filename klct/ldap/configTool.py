@@ -15,7 +15,7 @@ import copy
 import log.log as log
 
 
-def check_valid_IP(host_name):
+def _check_valid_IP(host_name):
     """
     Checks if the given hostName is a valid IP address.
     Return 1 if valid, 0 if invalid.
@@ -35,7 +35,7 @@ def check_valid_IP(host_name):
         return 0
 
 
-def setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):
+def _setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path):
     """
     Sets up a connection given the parameters.
     Note: unbind the returned connection when finished using socket
@@ -107,7 +107,7 @@ def setup_connection(host_name, port_number, user_name, password, want_tls, tls_
     return return_values
 
 
-def create_filter(attributes, num_attributes):
+def _create_filter(attributes, num_attributes):
     """
     Returns a filter based on the number of attributes we want filtered.
     todo: add more number of attributes (currently only handles 3)
@@ -120,7 +120,7 @@ def create_filter(attributes, num_attributes):
         return '(&(&('+attributes[0]+'='+attributes[1]+'))(objectclass='+attributes[2]+')('+attributes[3]+'=*))'
 
 
-def ping_LDAP_server(host_name):
+def ping_ldap_server(host_name):
     """
     Checks if the given hostName is valid, and pings it.
     """
@@ -133,7 +133,7 @@ def ping_LDAP_server(host_name):
         log.failure("Unable to convert " + host_name)
         pass
 
-    is_valid = check_valid_IP(new_host_name)
+    is_valid = _check_valid_IP(new_host_name)
     if not is_valid or host_name == "":
         return_values['message'] = host_name + " is an invalid host name"
         return return_values
@@ -160,7 +160,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     """
     Attempts to connect to the provided hostName and port number, default port is 389 if none provided.
     """
-    conn_info = setup_connection(host_name, port_number, "", "", 'n', "")
+    conn_info = _setup_connection(host_name, port_number, "", "", 'n', "")
     #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
@@ -172,7 +172,7 @@ def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, t
     Note: tls not working
     """
     log.success("Initializing connection to \"" + host_name + "\"")
-    conn_info = setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
+    conn_info = _setup_connection(host_name, port_number, user_name, password, want_tls, tls_cert_path)
     #if conn_info['exit_status'] == 1:
         #conn_info['conn'].unbind() front end will unbind for now
     return conn_info
@@ -188,14 +188,23 @@ def retrieve_server_info(conn, server):
         assert conn.closed is not True
         log.success("Connection socket is open")
         log.success("Creating serverinfo and serverschema files")
-        serverinfo = open("serverinfo.txt", "w+") #note: doesn't matter that we overwrite serverinfo.txt bc users personal files should never be in this directory
-        serverschema = open("serverschema.txt", "w+")
+
+        orig_stdout = sys.stdout
+
+        sys.stdout = open("serverinfo.txt", "w+") #note: doesn't matter that we overwrite serverinfo.txt bc users personal files should never be in this directory
+        print(server.info)
+        sys.stdout.close()
+
+        sys.stdout = open("serverschema.txt", "w+")
+        print(server.schema)
+        sys.stdout.close()
+
+        sys.stdout = orig_stdout
+
         log.success("Dumping serverinfo and serverschema to the respective files")
-        print >>serverinfo, server.info
-        print >>serverschema, server.schema
+        # print >>serverinfo, server.info
+        # print >>serverschema, server.schema
         log.success("Closing serverinfo and serverschema files")
-        serverinfo.close()
-        serverschema.close()
 
         log.success("Searching for ldap attributes")
         if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True and conn.entries:
@@ -229,7 +238,7 @@ def retrieve_server_info(conn, server):
             return_values['type'] = "LDAP Server Type: " + server_type
             return return_values
     except exceptions.AssertionError as err:
-        return_vaules['error'] = err
+        return_values['error'] = err
     except:
         return_values['error'] = sys.exc_info()
     log.failure(return_values['error'])
@@ -260,7 +269,7 @@ def check_LDAP_suffix(conn, base_dn):
     try:
         assert conn.closed is not True
         log.success("Connection is open")
-        search_filter = create_filter(['cn'], 1)
+        search_filter = _create_filter(['cn'], 1)
         log.success("Created search filter: " + search_filter)
         if conn.search(search_base=base_dn, search_filter=search_filter) is True and conn.entries:
             log.success(base_dn + " is a valid suffix (base DN)")
@@ -321,7 +330,7 @@ def list_object_classes(conn, dn, id_attribute):
     try:
         assert conn.closed is not True
         log.success("Connection is open")
-        search_filter = create_filter([id_attribute], 1)
+        search_filter = _create_filter([id_attribute], 1)
         log.success("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=['objectclass']) is True and conn.entries:
             objclasses_list = []
@@ -370,7 +379,7 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
         if limit is None:
             log.success("No limit entered, using 3 as default")
             limit = 3
-        search_filter = create_filter([objectclass, id_attribute], 2)
+        search_filter = _create_filter([objectclass, id_attribute], 2)
         log.success("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, size_limit=limit) is True and conn.entries:
             log.success("Found list of entries: " + str(conn.entries))
@@ -393,7 +402,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
     try:
         assert conn.closed is not True
         log.success("Connection is open")
-        search_filter = create_filter([name_attribute, name, objectclass, id_attribute], 3)
+        search_filter = _create_filter([name_attribute, name, objectclass, id_attribute], 3)
         log.success("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter) is True and conn.entries:
             if len(conn.entries) > 1:
