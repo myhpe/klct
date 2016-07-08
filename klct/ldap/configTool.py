@@ -7,6 +7,7 @@ import ldap3
 from ldap3 import Server, Connection, ALL
 import exceptions
 import yaml
+import copy
 
 # if __name__ == "configTool" and __package__ is None:
 #     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -123,28 +124,36 @@ def ping_LDAP_server(host_name):
     """
     Checks if the given hostName is valid, and pings it.
     """
-    log.success("Initializing ping sequence to \"" + host_name + "\"")
+    log.success("Initializing ping sequence to " + host_name)
+    return_values = {'exit_status': 0, 'host_name': host_name, 'message': None}
     try:
-        old_host = host_name
-        host_name = socket.gethostbyname(host_name)
-        log.success("Converted \"" + old_host + "\" to an ip: \"" + host_name + "\"")
+        new_host_name = socket.gethostbyname(host_name)
+        log.success("Converted " + host_name + " to an ip: " + new_host_name)
     except socket.gaierror:
+        log.failure("Unable to convert " + host_name)
         pass
 
-    is_valid = check_valid_IP(host_name)
-    if not is_valid:
-        return -1
-    response = None
+    is_valid = check_valid_IP(new_host_name)
+    if not is_valid or host_name == "":
+        return_values['message'] = host_name + " is an invalid host name"
+        return return_values
 
     with open(os.devnull, "w"):
         try:
             subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
-            response = 1
-            log.success("Successfully pinged \"" + host_name + "\"")
+            log.success("Successfully pinged " + host_name)
+            return_values['exit_status'] = 1
+            return_values['message'] = "Successfully pinged " + host_name
         except subprocess.CalledProcessError:
-            response = 0
-            log.failure("Unsuccessfully pinged \"" + host_name + "\"")
-    return response
+            log.failure("Unsuccessfully pinged " + host_name)
+            return_values['exit_status'] = 0
+            return_values['message'] = "Unsuccessfully pinged " + host_name
+
+    if host_name == new_host_name:
+        return_values['host_name'] = "ldap://" + host_name
+    else:
+        return_values['host_name'] = host_name
+    return return_values
 
 
 def connect_LDAP_server_basic(host_name, port_number):
@@ -265,6 +274,7 @@ def check_LDAP_suffix(conn, base_dn):
         log.failure(sys.exc_info())
     return {'exit_status': 0, 'message': base_dn + " is an invalid suffix (base DN)", 'error': sys.exc_info()}
 
+
 def validate_info(conn, dn, id_attribute, name_attribute):
     """
     Checks that the given dn is valid. If so, it will validate the id_attribute and name_attribute as well.
@@ -277,7 +287,6 @@ def validate_info(conn, dn, id_attribute, name_attribute):
 
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter='(objectclass=*)', attributes=[ldap3.ALL_ATTRIBUTES], size_limit=1) is True and conn.entries:
             log.success(dn + " is a valid DN")
-            print(conn.entries[0])
             if id_attribute in conn.entries[0]:
                 log.success(id_attribute + " is a valid id attribute")
             else:
@@ -294,7 +303,7 @@ def validate_info(conn, dn, id_attribute, name_attribute):
                 else:
                     return_values['message'] = name_attribute + " is a valid name attribute"
             if return_values['exit_status'] == 1:
-                return_values['message'] = dn + ", " + id_attribute + ", and " + name_attribute + " are valid DN, id attribute, and name attribute"
+                return_values['message'] = dn + ", " + id_attribute + ", and " + name_attribute + " are valid"
             return return_values
     except exceptions.AssertionError as err:
         log.failure(err)
@@ -319,7 +328,6 @@ def list_object_classes(conn, dn, id_attribute):
             for objclass_list in conn.entries:
                 for objclass in objclass_list.objectclass:
                     if objclass not in objclasses_list:
-                        print(objclass)
                         objclasses_list.append(objclass)
             log.success("Found object classes: " + str(objclasses_list))
             return {'exit_status': 1, 'objectclasses': objclasses_list}
