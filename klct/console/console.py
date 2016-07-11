@@ -11,8 +11,8 @@ import yaml
 #
 #     print("parent_dir: %s", parent_dir)
 
-import ldap.ldap_service as configTool
-import log.log as log
+import klct.ldap.ldap_service as configTool
+import klct.log.log as log
 
 # sys.path.insert(0, '../ldap')
 # import configTool
@@ -393,7 +393,7 @@ def prompt_base_dn(screen):
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Validating suffix (base DN)...",
                   curses.color_pair(5) | curses.A_BOLD)
     screen.refresh()
-    results = configTool.check_LDAP_suffix(conn, base_dn)
+    results = configTool.check_ldap_suffix(conn, base_dn)
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "                    ")
     if results["exit_status"] == 1:
         configuration_dict["suffix"] = base_dn
@@ -446,7 +446,7 @@ def menu_ping_ldap_ip(screen):
                   curses.color_pair(5) | curses.A_BLINK)
     screen.refresh()
 
-    results = configTool.ping_LDAP_server(ip_string)
+    results = configTool.ping_ldap_server(ip_string)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "                        ")
     if results['exit_status'] == 1 and ip_string != "":
         screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2,
@@ -499,7 +499,7 @@ def menu_check_ldap_connection_basic(screen):
                           curses.color_pair(5))
             screen.refresh()
 
-            conn_info = configTool.connect_LDAP_server_basic(host_ip, port_numb)
+            conn_info = configTool.connect_ldap_server_basic(host_ip, port_numb)
             screen.addstr(screen_dims[0] / 2 - 7, screen_dims[1] / 2 - 18, "                                       ")
             if conn_info['exit_status'] == 1:
                 basic_ldap_menu_success(screen, conn_info, screen_dims)
@@ -531,7 +531,7 @@ def menu_check_ldap_connection_adv(screen, skip=0):
             screen.addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "Attempting to connect to LDAP server...",
                           curses.color_pair(5))
             screen.refresh()
-            conn_info = configTool.connect_LDAP_server(host_ip, port_numb, user_name, pass_wd, tls_y_or_n,
+            conn_info = configTool.connect_ldap_server(host_ip, port_numb, user_name, pass_wd, tls_y_or_n,
                                                        tls_cert_path)
             screen.addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "                                       ")
             if conn_info['exit_status'] == 1:
@@ -595,7 +595,7 @@ def menu_check_ldap_suffix(screen):
     else:
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "Fetching base dn...", curses.color_pair(5))
         server = var_dict["conn_info"]["server"]
-        ret_vals = configTool.get_LDAP_suffix(server)
+        ret_vals = configTool.get_ldap_suffix(server)
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "                   ")
         if ret_vals["exit_status"] == 0:
             screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
@@ -821,7 +821,7 @@ def menu_get_specific_user(screen):
         object_class = configuration_dict["user_object_class"]
         user_name_attribute = configuration_dict["user_name_attribute"] # ? where does this come from
         name_msg_prompt = "What is the user name you would like to get?"
-        name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt) # andy: need to change vertical offset (or change vertical offset of error message)
+        name = my_raw_input(screen, screen_dims[0]/2 - 2, screen_dims[1]/2 - len(name_msg_prompt), name_msg_prompt)
         return_values = configTool.get_entry(conn, user_dn, user_id_attribute, object_class, user_name_attribute, name)
     else:
         return_values = {"exit_status": 0}
@@ -829,7 +829,7 @@ def menu_get_specific_user(screen):
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
         user = return_values["entry"]
-        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, user) # andy: need to change offset
+        display_list_with_numbers(screen, screen_dims[0] / 2, screen_dims[1] / 2 - 8, user)
         end_menu_call(screen, 8)
     else:
         err_msg = "Unable to retrieve user"
@@ -871,7 +871,6 @@ def menu_input_group_attributes(screen):
 
 
 def check_group_config_dict(screen, screen_dims):
-    # andy: I don't think this method is correct. should be checking for group_name_attribute instead of objectclass? Also the second nested if statement does nothing.
     if var_dict["conn_info"] == "none":
         no_conn_info_msg = "No LDAP server found. Please complete steps 1 and 2."
         screen.addstr(screen_dims[0]/2, screen_dims[1]/2 - len(no_conn_info_msg)/2, no_conn_info_msg,
@@ -891,8 +890,6 @@ def check_group_config_dict(screen, screen_dims):
 
 def menu_show_list_group_object_classes(screen):
     screen_dims = setup_menu_call(screen, "10. Show List of Group Related ObjectClasses")
-    log.success("test method below: ")
-    log.success(check_group_config_dict(screen,screen_dims))
     if check_group_config_dict(screen, screen_dims):
         conn = var_dict["conn_info"]["conn"]
         group_dn = configuration_dict["group_tree_dn"]
