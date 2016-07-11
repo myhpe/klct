@@ -12,7 +12,7 @@ import copy
 # if __name__ == "configTool" and __package__ is None:
 #     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #     os.sys.path.append(parent_dir)
-import log.log as log
+import klct.log.log as log
 
 
 def _check_valid_IP(host_name):
@@ -126,6 +126,7 @@ def ping_ldap_server(host_name):
     """
     log.success("Initializing ping sequence to " + host_name)
     return_values = {'exit_status': 0, 'host_name': host_name, 'message': None}
+    new_host_name = ""
     try:
         new_host_name = socket.gethostbyname(host_name)
         log.success("Converted " + host_name + " to an ip: " + new_host_name)
@@ -133,11 +134,7 @@ def ping_ldap_server(host_name):
         log.failure("Unable to convert " + host_name)
         pass
 
-<<<<<<< HEAD
-    is_valid = check_valid_IP(new_host_name)
-=======
     is_valid = _check_valid_IP(new_host_name)
->>>>>>> d8737c438399e06276cbfa3a5f8e525c45401e67
     if not is_valid or host_name == "":
         return_values['message'] = host_name + " is an invalid host name"
         return return_values
@@ -160,7 +157,7 @@ def ping_ldap_server(host_name):
     return return_values
 
 
-def connect_LDAP_server_basic(host_name, port_number):
+def connect_ldap_server_basic(host_name, port_number):
     """
     Attempts to connect to the provided hostName and port number, default port is 389 if none provided.
     """
@@ -170,7 +167,7 @@ def connect_LDAP_server_basic(host_name, port_number):
     return conn_info
 
 
-def connect_LDAP_server(host_name, port_number, user_name, password, want_tls, tls_cert_path):
+def connect_ldap_server(host_name, port_number, user_name, password, want_tls, tls_cert_path):
     """
     Attempts to connect to the provided hostName and port number, default port is 389 if none provided, using the provided user name and pass.
     Note: tls not working
@@ -251,7 +248,7 @@ def retrieve_server_info(conn, server):
     #return dict
 
 
-def get_LDAP_suffix(server):
+def get_ldap_suffix(server):
     """
     Returns the base dn of the ldap server
     """
@@ -265,7 +262,7 @@ def get_LDAP_suffix(server):
         return {'exit_status': 0, 'error': sys.exc_info}
 
 
-def check_LDAP_suffix(conn, base_dn):
+def check_ldap_suffix(conn, base_dn):
     """
     Checks that the given base_dn is the correct suffix for the given connection.
     """
@@ -385,7 +382,7 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
             limit = 3
         search_filter = _create_filter([objectclass, id_attribute], 2)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, size_limit=limit) is True and conn.entries:
+        if conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=[ldap3.ALL_ATTRIBUTES], size_limit=limit) is True and conn.entries:
             log.success("Found list of entries: " + str(conn.entries))
             return {'exit_status': 1, 'entries': conn.entries}
         else:
@@ -408,7 +405,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
         log.success("Connection is open")
         search_filter = _create_filter([name_attribute, name, objectclass, id_attribute], 3)
         log.success("Created search filter: " + search_filter)
-        if conn.search(search_base=dn, search_filter=search_filter) is True and conn.entries:
+        if conn.search(search_base=dn, search_filter=search_filter, attributes=[ldap3.ALL_ATTRIBUTES]) is True and conn.entries:
             if len(conn.entries) > 1:
                 log.failure("Duplicate entries found for: " + name)
                 return{'exit_status': 0, 'entry': conn.entries, 'error': "Duplicate entries found"}
