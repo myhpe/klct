@@ -133,7 +133,11 @@ def ping_ldap_server(host_name):
         log.failure("Unable to convert " + host_name)
         pass
 
+<<<<<<< HEAD
+    is_valid = check_valid_IP(new_host_name)
+=======
     is_valid = _check_valid_IP(new_host_name)
+>>>>>>> d8737c438399e06276cbfa3a5f8e525c45401e67
     if not is_valid or host_name == "":
         return_values['message'] = host_name + " is an invalid host name"
         return return_values
