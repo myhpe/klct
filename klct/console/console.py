@@ -444,7 +444,7 @@ def menu_ping_ldap_ip(screen):
     pings that IP address to see if it able to send a response."""
     screen_dims = setup_menu_call(screen, "1. Enter/Validate LDAP Server IP")
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
-    ip_string = my_raw_input_two(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
+    ip_string = my_raw_input(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
                   curses.color_pair(5) | curses.A_BLINK)
@@ -600,7 +600,7 @@ def menu_input_user_attributes(screen):
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         user_id_attr_prompt = "What is the user id attribute?"
         user_name_attr_prompt = "What is the user name attribute?"
@@ -613,7 +613,7 @@ def menu_input_user_attributes(screen):
         else:
             screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
             screen.getch()
-            display_menu(screen, status_window)
+            display_menu(screen)
 
         results = configTool.validate_info(var_dict["conn_info"]["conn"], user_tree_dn + "," + configuration_dict["suffix"], user_id_attribute, user_name_attribute)
         if results["exit_status"] == 1:
@@ -775,7 +775,7 @@ def menu_input_group_attributes(screen):
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         group_id_attr_prompt = "What is the group id attribute?"
         group_name_attr_prompt = "What is the group name attribute?"
@@ -789,7 +789,7 @@ def menu_input_group_attributes(screen):
         else:
             screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
             screen.getch()
-            display_menu(screen, status_window)
+            display_menu(screen)
 
         results = configTool.validate_info(var_dict["conn_info"]["conn"], group_tree_dn + "," + configuration_dict["suffix"], group_id_attribute, group_name_attribute)
         if results["exit_status"] == 1:
