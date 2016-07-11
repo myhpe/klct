@@ -129,7 +129,7 @@ def show_instructions(screen):
     display_menu(var_dict["main_window"])
 
 
-def my_raw_input(screen, y, x, prompt_string):
+def my_raw_input_alt(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
     will show a prompt at (y + 1, x). Currently only able to
     prompt for 20 chars, but can change later."""
@@ -144,11 +144,44 @@ def my_raw_input(screen, y, x, prompt_string):
     return str_input
 
 
+def my_raw_input(screen, y, x, prompt_string):
+    curses.noecho()
+    curses.curs_set(True)
+    screen.addstr(y, x, prompt_string, curses.color_pair(2))
+    screen.addch(y + 1, x, ">")
+    screen.refresh()
+    x_coord = x + 1
+    str_input_pos = 0
+    str_input = []
+    c = screen.getch()
+    while c != 10: # 10 == '\n' newline character
+        if c < 256:
+            str_input.append(chr(c))
+            screen.addch(y + 1, x_coord, str(chr(c)))
+            x_coord += 1
+            str_input_pos += 1
+        if c in (263, 8, 330):
+            if x_coord > x + 1:
+                x_coord -= 1
+                screen.refresh()
+            screen.addch(y + 1, x_coord, " ")
+            if str_input_pos > 0:
+                str_input_pos -= 1
+            if len(str_input) > 0:
+                str_input.pop()
+        screen.move(y + 1, x_coord)
+        c = screen.getch()
+    string_input = ''.join(str_input)
+    curses.curs_set(False)
+    curses.noecho()
+    return string_input
+
 def my_pw_input(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
     will show a prompt at (y + 1, x). Will echo characters but as an '*',
     to hide the password's characters from showing on the screen."""
     curses.noecho() # no echoing
+    curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addch(y + 1, x, ">")
     screen.refresh()
@@ -172,6 +205,7 @@ def my_pw_input(screen, y, x, prompt_string):
             if len(str_input) > 0:
                 str_input.pop()
     pw_input = ''.join(str_input)
+    curses.curs_set(False)
     return pw_input
 
 
@@ -410,7 +444,7 @@ def menu_ping_ldap_ip(screen):
     pings that IP address to see if it able to send a response."""
     screen_dims = setup_menu_call(screen, "1. Enter/Validate LDAP Server IP")
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
-    ip_string = my_raw_input(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
+    ip_string = my_raw_input_two(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
     screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
                   curses.color_pair(5) | curses.A_BLINK)
