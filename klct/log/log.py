@@ -5,7 +5,6 @@ import logging.config
 log_dir = (os.path.dirname(os.path.abspath(__file__)))
 curdir = os.getcwd()
 os.chdir(log_dir)
-print(__name__)
 
 logging.config.fileConfig('logging.conf')
 LOG = logging.getLogger(__name__)
