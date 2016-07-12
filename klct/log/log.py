@@ -5,6 +5,7 @@ import logging.config
 log_dir = (os.path.dirname(os.path.abspath(__file__)))
 curdir = os.getcwd()
 os.chdir(log_dir)
+print(__name__)
 
 logging.config.fileConfig('logging.conf')
 LOG = logging.getLogger(__name__)
@@ -33,14 +34,6 @@ class FormatValidator(object):
 
     def isYaml(self):
         pass
-
-
-def success(message):
-    LOG.info(message)
-
-
-def failure(message):
-    LOG.warning(message)
 
 
 # if __name__ == '__main__':
