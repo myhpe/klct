@@ -35,13 +35,5 @@ class FormatValidator(object):
         pass
 
 
-def success(message):
-    LOG.info(message)
-
-
-def failure(message):
-    LOG.warning(message)
-
-
 # if __name__ == '__main__':
 #     file_validator = FormatValidator("configTool.py")
