@@ -64,31 +64,13 @@ menu_options = ["1. Enter/Validate LDAP Server IP",
                 "14. Save/Create Configuration File"]
 configuration_dict = {
                }
-temp_dict = {
-            "url": "none",
-            "suffix": "none",
-            "query_scope": "none",
-            "user_tree_dn": "none",
-            "user": "none",
-            "password": "none",
-            "user_object_class": "none",
-            "user_id_attribute": "none",
-            "user_name_attribute": "none",
-            "group_tree_dn":"none",
-            "group_objectclass": "none",
-            "group_id_attribute": "none",
-            "use_pool": "none",
-            "user_enabled_attribute": "none",
-            "user_enabled_mask": "none",
-            "user_enabled_default": "none",
-            "use_tls": "none" }
-
 
 var_dict = {"conn_info": "none",
             "object_class": "none",
             "status_window": status_window,
             "status_window_text": status_window_text,
             "main_window": main_window}
+
 """HELPER METHODS"""
 
 
@@ -124,7 +106,6 @@ def show_instructions(screen):
     while char_press != ord('m'):
         char_press = screen.getch()
     screen.clear()
-    screen.box()
     screen.refresh()
     display_menu(var_dict["main_window"])
 
@@ -155,12 +136,29 @@ def my_raw_input(screen, y, x, prompt_string):
     str_input = []
     c = screen.getch()
     while c != 10: # 10 == '\n' newline character
-        if c < 256:
+        if c == curses.KEY_RESIZE:
+            var_dict["status_window"].clear()
+            var_dict["status_window_text"].clear()
+            screen_dimensions = stdscr.getmaxyx()
+            var_dict["main_window"] = stdscr.subwin(screen_dimensions[0] - 2, screen_dimensions[1] - screen_dimensions[1] / 4 - 1,
+                                   1, 1)
+            var_dict["main_window"].keypad(True)
+            var_dict["status_window"] = stdscr.subwin(screen_dimensions[0] - 2, screen_dimensions[1] / 4 - 2, 1,
+                                                      screen_dimensions[1] - screen_dimensions[1] / 4)
+            var_dict["status_window_text"] = stdscr.subwin(screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
+                                                           screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
+
+            show_console_in_status_window()
+            stdscr.refresh()
+            screen.refresh()
+            status_window.refresh()
+            status_window_text.refresh()
+        elif c < 256:
             str_input.append(chr(c))
             screen.addch(y + 1, x_coord, str(chr(c)))
             x_coord += 1
             str_input_pos += 1
-        if c in (263, 8, 330):
+        elif c in (263, 8, 330):
             if x_coord > x + 1:
                 x_coord -= 1
                 screen.refresh()
@@ -175,6 +173,7 @@ def my_raw_input(screen, y, x, prompt_string):
     curses.curs_set(False)
     curses.noecho()
     return string_input
+
 
 def my_pw_input(screen, y, x, prompt_string):
     """Prompt for input from user. Given a (y, x) coordinate,
@@ -195,7 +194,6 @@ def my_pw_input(screen, y, x, prompt_string):
             screen.addch(y + 1, x_coord, "*")
             x_coord += 1
             str_input_pos += 1
-        c = screen.getch()
         if c in (263, 8, 330):
             if x_coord > x + 1:
                 x_coord -= 1
@@ -204,6 +202,8 @@ def my_pw_input(screen, y, x, prompt_string):
                 str_input_pos -= 1
             if len(str_input) > 0:
                 str_input.pop()
+        screen.move(y + 1, x_coord)
+        c = screen.getch()
     pw_input = ''.join(str_input)
     curses.curs_set(False)
     return pw_input
@@ -258,7 +258,7 @@ def my_numb_input(screen, y, x, prompt_string, limit=None):
 
 def setup_menu_call(screen, title=""):
     """Typically called at start of a menu method.
-    Clears screen and returns max y and max x in tuple (max_y, max_x)."""
+    Clears screen, adds title and returns max y and max x in tuple (max_y, max_x)."""
     screen.clear()
     screen_dims = screen.getmaxyx()
     screen.addstr(screen_dims[0]/6, screen_dims[1]/2 - len(title)/2, title,
@@ -309,7 +309,7 @@ def ip_not_exists(screen, screen_dims):
     if key_press == 109:
         display_menu(screen)
     elif key_press == 112:
-        menu_ping_ldap_ip(screen)
+        menu_ping_ldap_ip()
 
 
 def adv_ldap_setup_prompts(screen, max_yx):
@@ -439,25 +439,25 @@ def show_console_in_status_window():
     var_dict["status_window_text"].refresh()
 
 
-def menu_ping_ldap_ip(screen):
+def menu_ping_ldap_ip():
     """Displays a screen prompting user for IP address and then
     pings that IP address to see if it able to send a response."""
-    screen_dims = setup_menu_call(screen, "1. Enter/Validate LDAP Server IP")
+    screen_dims = setup_menu_call(var_dict["main_window"], "1. Enter/Validate LDAP Server IP")
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
-    ip_string = my_raw_input_two(screen, screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
+    ip_string = my_raw_input(var_dict["main_window"], screen_dims[0] / 6 + 4, screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
-    screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
+    var_dict["main_window"].addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "Attempting to ping IP...",
                   curses.color_pair(5) | curses.A_BLINK)
-    screen.refresh()
+    var_dict["main_window"].refresh()
 
     results = configTool.ping_ldap_server(ip_string)
-    screen.addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "                        ")
+    var_dict["main_window"].addstr(screen_dims[0] / 2 - 5, screen_dims[1] / 2 - 12, "                        ")
     if results['exit_status'] == 1 and ip_string != "":
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2,
                       results['message'], curses.color_pair(6))
-        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 26,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 26,
                       "This IP will automatically be used in the next steps.", curses.color_pair(4))
-        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
@@ -467,66 +467,66 @@ def menu_ping_ldap_ip(screen):
     #     screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 30,
     #                   "Invalid Hostname or IP. Press 'r' to retry, or 'm' for menu.", curses.color_pair(3))
     else:
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(3))
-        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
-                      "Press 'r' to retry this step, or 'm' for menu.")
-    temp_char = screen.getch()
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - len(results['message']) / 2, results['message'], curses.color_pair(3))
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
+                                       "Press 'r' to retry this step, or 'm' for menu.")
+    temp_char = var_dict["main_window"].getch()
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
-        temp_char = screen.getch()
+        temp_char = var_dict["main_window"].getch()
     if temp_char == 109:
-        display_menu(screen)
+        display_menu(var_dict["main_window"])
     elif temp_char == 110:
-        menu_check_ldap_connection_adv(screen, 1)
+        menu_check_ldap_connection_adv(var_dict["main_window"], 1)
     elif temp_char == 114:
-        menu_ping_ldap_ip(screen)
+        menu_ping_ldap_ip()
 
 
 def menu_check_ldap_connection_adv(screen, skip=0):
-    max_yx = setup_menu_call(screen, "2. Check Connection to LDAP Server")
+    max_yx = setup_menu_call(var_dict["main_window"], "2. Check Connection to LDAP Server")
     if not configuration_dict.has_key("url"):
-        ip_not_exists(screen, max_yx)
+        ip_not_exists(var_dict["main_window"], max_yx)
     else:
         if skip == 0:
-            y_n = prompt_char_input(screen, max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
+            y_n = prompt_char_input(var_dict["main_window"], max_yx[0] / 2 - 4, max_yx[1] / 2 - 26,
                                     "Valid IP has been found, would you like to use this? [y/n]", ('y', 'n'))
         else:
             y_n = 'y'
-        screen.clear()
+        var_dict["main_window"].clear()
         if y_n == 'y':
-            adv_ldap_inputs = adv_ldap_setup_prompts(screen, max_yx)
+            adv_ldap_inputs = adv_ldap_setup_prompts(var_dict["main_window"], max_yx)
             host_ip = adv_ldap_inputs[0]
             port_numb = adv_ldap_inputs[1]
             user_name = adv_ldap_inputs[2]
             pass_wd = adv_ldap_inputs[3]
             tls_y_or_n = adv_ldap_inputs[4]
             tls_cert_path = adv_ldap_inputs[5]
-            screen.addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "Attempting to connect to LDAP server...",
+            var_dict["main_window"].addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "Attempting to connect to LDAP server...",
                           curses.color_pair(5))
-            screen.refresh()
+            var_dict["main_window"].refresh()
             conn_info = configTool.connect_ldap_server(host_ip, port_numb, user_name, pass_wd, tls_y_or_n,
                                                        tls_cert_path)
-            screen.addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "                                       ")
+            var_dict["main_window"].addstr(max_yx[0] / 2 - 8, max_yx[1] / 2 - 18, "                                       ")
             if conn_info['exit_status'] == 1:
                 if tls_cert_path != None:
-                    adv_ldap_success(screen, conn_info, max_yx, tls_cert_path)
+                    adv_ldap_success(var_dict["main_window"], conn_info, max_yx, tls_cert_path)
                 else:
-                    adv_ldap_success(screen, conn_info, max_yx)
+                    adv_ldap_success(var_dict["main_window"], conn_info, max_yx)
             else:  # error occurred during ldap ping
-                adv_ldap_fail(screen, conn_info, max_yx)
+                adv_ldap_fail(var_dict["main_window"], conn_info, max_yx)
         else:
-            menu_ping_ldap_ip(screen)
+            menu_ping_ldap_ip(var_dict["main_window"])
 
 
 def menu_get_server_info(screen):
     """Displays server information on screen.
     Currently only displays version and type, but later will add information."""
-    screen_dims = setup_menu_call(screen, "3. Get Server Information")
+    screen_dims = setup_menu_call(var_dict["main_window"], "3. Get Server Information")
     if var_dict["conn_info"] == "none":
         error_msg = "No LDAP server found. Press any key to go to the menu."
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
+        var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - len(error_msg)/2, error_msg,
                       curses.color_pair(3) | curses.A_BOLD)
-        screen.getch()
-        display_menu(screen)
+        var_dict["main_window"].getch()
+        display_menu(var_dict["main_window"])
     else:
         conn_info = var_dict["conn_info"]
         server = conn_info["server"]
@@ -539,81 +539,81 @@ def menu_get_server_info(screen):
             strlen = len(ldap_type)
             if len(version) > len(ldap_type):
                 strlen = len(version)
-            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - strlen/2, version, curses.color_pair(5))
-            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - strlen/2, ldap_type, curses.color_pair(5))
-            screen.refresh()
+            var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - strlen/2, version, curses.color_pair(5))
+            var_dict["main_window"].addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - strlen/2, ldap_type, curses.color_pair(5))
+            var_dict["main_window"].refresh()
         else:
-            screen.addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, "error", curses.color_pair(3))
+            var_dict["main_window"].addstr(screen_dims[0]/2 + 1, screen_dims[1]/2, "error", curses.color_pair(3))
 
-        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Server Information:", curses.A_BOLD)
-        screen.addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10, "Server Information:", curses.A_BOLD)
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
-        c = screen.getch()
+        c = var_dict["main_window"].getch()
         while c not in (109, 110):
-            c = screen.getch()
+            c = var_dict["main_window"].getch()
         if c == 109:
-            display_menu(screen)
+            display_menu(var_dict["main_window"])
         if c == 110:
-            menu_check_ldap_suffix(screen)
+            menu_check_ldap_suffix(var_dict["main_window"])
 
 
 def menu_check_ldap_suffix(screen):
     """If failure, may be due to invalid credentials. May want to alert user of this later on."""
-    screen_dims = setup_menu_call(screen, "4. Check LDAP Suffix")
+    screen_dims = setup_menu_call(var_dict["main_window"], "4. Check LDAP Suffix")
     if var_dict["conn_info"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.")
-        screen.getch()
-        display_menu(screen)
+        var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press 'm' to go to menu.")
+        var_dict["main_window"].getch()
+        display_menu(var_dict["main_window"])
     else:
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "Fetching base dn...", curses.color_pair(5))
+        var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "Fetching base dn...", curses.color_pair(5))
         server = var_dict["conn_info"]["server"]
         ret_vals = configTool.get_ldap_suffix(server)
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "                   ")
+        var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 9, "                   ")
         if ret_vals["exit_status"] == 0:
-            screen.addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
-            prompt_base_dn(screen)
+            var_dict["main_window"].addstr(screen_dims[0] / 2 + 1, screen_dims[1] / 2 - 23, "Unable to find base dn, Please input a base dn")
+            prompt_base_dn(var_dict["main_window"])
         elif ret_vals["exit_status"] == 1:
             base_dn = ret_vals['base_dn']
             configuration_dict["suffix"] = base_dn
             menu_options[3] = u"4. Check LDAP Suffix ✓"
             menu_color[3] = curses.color_pair(7)
             show_console_in_status_window()
-            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - (len(base_dn) - 8), base_dn + " is your base dn.")
-            y_n = prompt_char_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 17,
+            var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - (len(base_dn) - 8), base_dn + " is your base dn.")
+            y_n = prompt_char_input(var_dict["main_window"], screen_dims[0] / 2 + 2, screen_dims[1] / 2 - 17,
                                     "Is this information correct? [y/n]", ('y', 'n'))
             if y_n == 'y':
-                screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
+                var_dict["main_window"].addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 25, "Press 'n' to move on to next step, or 'm' for menu.", curses.A_BOLD)
             else:
                 prompt_base_dn(screen)
 
-        c = screen.getch()
+        c = var_dict["main_window"].getch()
         while c not in (109, 110):
-            c = screen.getch()
+            c = var_dict["main_window"].getch()
         if c == 109:
-            display_menu(screen)
+            display_menu(var_dict["main_window"])
         elif c == 110:
-            menu_input_user_attributes(screen)
+            menu_input_user_attributes(var_dict["main_window"])
 
 
 def menu_input_user_attributes(screen):
-    screen_dims = setup_menu_call(screen, "5. Input User ID Attribute/User Name Attribute")
+    screen_dims = setup_menu_call(var_dict["main_window"], "5. Input User ID Attribute/User Name Attribute")
     if var_dict["conn_info"] == "none":
-        screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
-        screen.getch()
-        display_menu(screen, status_window)
+        var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
+        var_dict["main_window"].getch()
+        display_menu(var_dict["main_window"])
     else:
         user_id_attr_prompt = "What is the user id attribute?"
         user_name_attr_prompt = "What is the user name attribute?"
         user_tree_dn_prompt = "What is the user tree DN, not including the base DN (e.g. ou=Users)?"
         # alt_user_tree_dn_prompt = "What is the user tree DN, including the base DN (e.g. ou=Users,dc=hp,dc=com)"
         if configuration_dict.has_key("suffix"):
-            user_tree_dn = my_raw_input(screen, screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,user_tree_dn_prompt)
-            user_id_attribute = my_raw_input(screen, screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_id_attr_prompt)
-            user_name_attribute = my_raw_input(screen, screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_name_attr_prompt)
+            user_tree_dn = my_raw_input(var_dict["main_window"], screen_dims[0] / 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,user_tree_dn_prompt)
+            user_id_attribute = my_raw_input(var_dict["main_window"], screen_dims[0] / 2 + 2, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_id_attr_prompt)
+            user_name_attribute = my_raw_input(var_dict["main_window"], screen_dims[0] / 2 + 4, screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2, user_name_attr_prompt)
         else:
-            screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
-            screen.getch()
-            display_menu(screen, status_window)
+            var_dict["main_window"].addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
+            var_dict["main_window"].getch()
+            display_menu(var_dict["main_window"])
 
         results = configTool.validate_info(var_dict["conn_info"]["conn"], user_tree_dn + "," + configuration_dict["suffix"], user_id_attribute, user_name_attribute)
         if results["exit_status"] == 1:
@@ -623,8 +623,8 @@ def menu_input_user_attributes(screen):
             show_console_in_status_window()
             menu_options[4] = u"5. Input User ID Attribute/User Name Attribute ✓"
             menu_color[4] = curses.color_pair(7)
-        screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
-        end_menu_call(screen, 5)
+            var_dict["main_window"].addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - len(results['message']) / 2, results['message'])
+        end_menu_call(var_dict["main_window"], 5)
 
 
 def validate_user_dn_input(string):
@@ -775,7 +775,7 @@ def menu_input_group_attributes(screen):
     if var_dict["conn_info"] == "none":
         screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 23, "No LDAP server found. Press any key to go to the menu.")
         screen.getch()
-        display_menu(screen, status_window)
+        display_menu(screen)
     else:
         group_id_attr_prompt = "What is the group id attribute?"
         group_name_attr_prompt = "What is the group name attribute?"
@@ -789,7 +789,7 @@ def menu_input_group_attributes(screen):
         else:
             screen.addstr(screen_dims[0] / 2, screen_dims[1] / 2 - 29, "No Suffix (base DN) found. Press any key to go to the menu.")
             screen.getch()
-            display_menu(screen, status_window)
+            display_menu(screen)
 
         results = configTool.validate_info(var_dict["conn_info"]["conn"], group_tree_dn + "," + configuration_dict["suffix"], group_id_attribute, group_name_attribute)
         if results["exit_status"] == 1:
@@ -947,12 +947,15 @@ def menu_create_config(screen):
 
 def display_menu(screen):
     """Displays the menu. Does most of the work for displaying options."""
+    stdscr_screen_dimensions = stdscr.getmaxyx()
+    screen = stdscr.subwin(stdscr_screen_dimensions[0] - 2, stdscr_screen_dimensions[1] - stdscr_screen_dimensions[1] / 4 - 1,
+                           1, 1)
+    screen.keypad(True)
     screen_dimensions = screen.getmaxyx()
     screen_half_y = screen_dimensions[0]/2
     screen_half_x = screen_dimensions[1]/2
     screen.nodelay(0)
     screen.clear()
-    screen.box()
     var_dict["status_window"].box()
     show_console_in_status_window()
     screen.refresh()
@@ -1009,8 +1012,6 @@ def display_menu(screen):
                                           screen_dimensions[1] - screen_dimensions[1] / 4)
             var_dict["status_window_text"] = stdscr.subwin(screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
                                                screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
-            stdscr.box()
-            screen.box()
             show_console_in_status_window()
             main_screen_dimensions = screen.getmaxyx()
             screen_half_y = main_screen_dimensions[0]/2
@@ -1026,7 +1027,7 @@ def display_menu(screen):
         elif key_press == ord('\n'):
             menu_selection = option_num
             if option_num == 0:
-                menu_ping_ldap_ip(screen)
+                menu_ping_ldap_ip()
             elif option_num == 1:
                 menu_check_ldap_connection_adv(screen)
             elif option_num == 2:
