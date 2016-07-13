@@ -3,21 +3,18 @@ import ssl
 import subprocess
 import socket
 import sys
-import ldap3
-from ldap3 import Server, Connection, ALL
-import exceptions
-import yaml
-
-# if __name__ == "configTool" and __package__ is None:
-#     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#     os.sys.path.append(parent_dir)
-# import klct.log.log as log
 import logging
 
-LOG = logging.getLogger("log")
+import ldap3
+import yaml
+from ldap3 import Server, Connection, ALL
+
+import klct.log.logger
+
+LOG = logging.getLogger(__name__)
 
 
-def _check_valid_IP(host_name):
+def _check_valid_ip(host_name):
     """
     Checks if the given hostName is a valid IP address.
     Return 1 if valid, 0 if invalid.
@@ -159,7 +156,7 @@ def ping_ldap_server(host_name):
         LOG.warning("Unable to convert " + host_name)
         pass
 
-    is_valid = _check_valid_IP(new_host_name)
+    is_valid = _check_valid_ip(new_host_name)
     if not is_valid or host_name == "":
         ret_vals['message'] = host_name + " is an invalid host name"
         return ret_vals
