@@ -2,23 +2,16 @@
 import curses
 import locale
 import os.path
+import time
 import sys
 import yaml
-# import logging
-
-# if __name__ == "__main__" and __package__ is None:
-#     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#     os.sys.path.append(parent_dir)
-#
-#     print("parent_dir: %s", parent_dir)
-
+import logging
 import klct.ldap.ldap_service as conn_service
-# from klct.log import logger
+from klct.log import logger
 
-# sys.path.insert(0, '../ldap')
-# import configTool
-# LOG = logging.getLogger(__name__)
-
+timestamp_string = str(time.strftime('%a %H:%M:%S'))
+LOG = logging.getLogger(__name__)
+LOG.info("test")
 """SET UP"""
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
 stdscr = curses.initscr()  # terminal screen
@@ -129,10 +122,10 @@ def show_instructions(screen):
     curses.curs_set(0)
     screen_dimensions = screen.getmaxyx()
     screen.clear()
-    char_press = 0
     screen.addstr(screen_dimensions[0]/2,
                   screen_dimensions[1]/2 - len(start_instruction)/2,
                   start_instruction, curses.A_BOLD)
+    char_press = screen.getch()
     while char_press != ord('m'):
         char_press = screen.getch()
     screen.clear()
@@ -631,7 +624,8 @@ def menu_check_ldap_connection_adv(skip=0):
 
 def menu_get_server_info():
     """Displays server information on screen.
-    Currently only displays version and type, but later will add information."""
+    Currently only displays version and type,  but later will add
+    more information."""
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "3. Get Server Information")
     if var_dict["conn_info"] == "none":
@@ -752,7 +746,7 @@ def menu_input_user_attributes():
         user_name_attr_prompt = "What is the user name attribute?"
         user_tree_dn_prompt = "What is the user tree DN, " \
                               "not including the base DN (e.g. ou=Users)?"
-        if configuration_dict.has_key("suffix"):
+        if "suffix" not in configuration_dict:
             user_tree_dn = my_raw_input(var_dict["main_window"],
                                         screen_dims[0] / 2, screen_dims[1] /
                                         2 - len(user_tree_dn_prompt) / 2,
@@ -834,7 +828,7 @@ def menu_show_list_user_object_classes():
                                                screen_dims[1] / 2 - 15,
                                                "User Object classes:")
                 object_classes_list = return_values['objectclasses'] +\
-                                      ["None of the above"]
+                    ["None of the above"]
                 display_list_with_numbers(
                     var_dict["main_window"],
                     screen_dims[0]/2, screen_dims[1]/2 - 15,
@@ -962,7 +956,7 @@ def menu_check_user_tree_dn_show_users():
         var_dict["main_window"].addstr(screen_dims[0]/2 - 2,
                                        screen_dims[1]/2 - len(err_msg)/2,
                                        err_msg,
-                                       curses.color_pair(3)| curses.A_BOLD)
+                                       curses.color_pair(3) | curses.A_BOLD)
         end_menu_call(var_dict["main_window"], 7)
 
 
@@ -1279,7 +1273,7 @@ def display_menu():
     menu_selection = -1
     option_num = 0
     while menu_selection < 0:
-        menu_highlighting = [0] * 15 # number of menu options
+        menu_highlighting = [0] * 15  # number of menu options
         menu_highlighting[option_num] = curses.A_STANDOUT
         screen.addstr(screen_half_y - 9, screen_half_x - 11,
                       "LDAP Configuration Menu", curses.A_UNDERLINE |
