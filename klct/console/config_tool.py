@@ -337,6 +337,8 @@ def ip_not_exists(screen, screen_dims):
                   curses.color_pair(5))
     key_press = screen.getch()
     while key_press not in (109, 112):  # 109 == m, 112 == p
+        if key_press == curses.KEY_RESIZE:
+            resize()
         key_press = screen.getch()
     if key_press == 109:
         display_menu()
@@ -398,8 +400,10 @@ def adv_ldap_setup_prompts(screen, max_yx):
 
 
 def adv_ldap_success(screen, conn_info, max_yx, user_name,
-                     pass_word, tls_cert_path=0):
+                     pass_word, port_numb, tls_cert_path=0):
     var_dict["conn_info"] = conn_info
+    configuration_dict["url"] = configuration_dict["url"] + ":" + \
+        str(port_numb)
     if user_name is not None:
         configuration_dict["user"] = user_name
     if pass_word is not None:
@@ -439,6 +443,8 @@ def adv_ldap_fail(screen, conn_info, max_yx):
                   "Press 'r' to retry, or 'm' for menu.")
     char = screen.getch()
     while char not in (109, 114):
+        if char == curses.KEY_RESIZE:
+            resize()
         char = screen.getch()
     if char == 109:
         display_menu()
@@ -484,6 +490,8 @@ def prompt_base_dn(screen):
                       "Press 'r' to retry this step, or 'm' for menu.")
         c = screen.getch()
         while c not in (109, 114):
+            if c == curses.KEY_RESIZE:
+                resize()
             c = screen.getch()
         if c == 109:
             display_menu()
@@ -612,10 +620,11 @@ def menu_check_ldap_connection_adv(skip=0):
                 if tls_cert_path is not None:
                     adv_ldap_success(var_dict["main_window"],
                                      conn_info, max_yx, user_name, pass_wd,
-                                     tls_cert_path)
+                                     port_numb, tls_cert_path)
                 else:
                     adv_ldap_success(var_dict["main_window"],
-                                     conn_info, max_yx, user_name, pass_wd)
+                                     conn_info, max_yx, user_name, pass_wd,
+                                     port_numb)
             else:  # error occurred during ldap ping
                 adv_ldap_fail(var_dict["main_window"], conn_info, max_yx)
         else:
@@ -674,9 +683,9 @@ def menu_check_ldap_suffix():
                                   "4. Check LDAP Suffix")
     if var_dict["conn_info"] == "none":
         var_dict["main_window"].addstr(screen_dims[0] / 2,
-                                       screen_dims[1] / 2 - 23,
+                                       screen_dims[1] / 2 - 28,
                                        "No LDAP server found. "
-                                       "Press 'm' to go to menu.")
+                                       "Press any key to go to menu.")
         var_dict["main_window"].getch()
         display_menu()
     else:
@@ -746,7 +755,7 @@ def menu_input_user_attributes():
         user_name_attr_prompt = "What is the user name attribute?"
         user_tree_dn_prompt = "What is the user tree DN, " \
                               "not including the base DN (e.g. ou=Users)?"
-        if "suffix" not in configuration_dict:
+        if "suffix" in configuration_dict:
             user_tree_dn = my_raw_input(var_dict["main_window"],
                                         screen_dims[0] / 2, screen_dims[1] /
                                         2 - len(user_tree_dn_prompt) / 2,
@@ -812,7 +821,7 @@ def menu_show_list_user_object_classes():
         conn_info = var_dict["conn_info"]
         conn = conn_info['conn']
         # base_dn = configuration_dict["suffix"]
-        if "user_id_attribute" not in configuration_dict:
+        if "user_id_attribute" in configuration_dict:
             user_id_attribute = configuration_dict["user_id_attribute"]
             return_values = conn_service.list_object_classes(
                 conn, configuration_dict["user_tree_dn"], user_id_attribute)
@@ -1013,7 +1022,7 @@ def menu_input_group_attributes():
             "What is the group tree DN, " \
             "not including the base DN (e.g. ou=Groups)?"
 
-        if "suffix" not in configuration_dict:
+        if "suffix" in configuration_dict:
             group_tree_dn = my_raw_input(
                 var_dict["main_window"],
                 screen_dims[0] / 2,
@@ -1248,6 +1257,8 @@ def menu_create_config():
                                    screen_dims[1]/2 - len(end_msg)/2, end_msg)
     c = var_dict["main_window"].getch()
     while c != 109:
+        if c == curses.KEY_RESIZE:
+            resize()
         c = var_dict["main_window"].getch()
     if c == 109:
         display_menu()
