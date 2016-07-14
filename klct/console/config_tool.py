@@ -4,6 +4,7 @@ import locale
 import os.path
 import sys
 import yaml
+# import logging
 
 # if __name__ == "__main__" and __package__ is None:
 #     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -12,11 +13,11 @@ import yaml
 #     print("parent_dir: %s", parent_dir)
 
 import klct.ldap.ldap_service as conn_service
-import klct.log.log as log
+# from klct.log import logger
 
 # sys.path.insert(0, '../ldap')
 # import configTool
-
+# LOG = logging.getLogger(__name__)
 
 """SET UP"""
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
@@ -77,6 +78,29 @@ var_dict = {"conn_info": "none",
             "main_window": main_window}
 
 """HELPER METHODS"""
+
+
+def resize():
+    var_dict["status_window"].clear()
+    var_dict["status_window_text"].clear()
+    screen_dimensions = stdscr.getmaxyx()
+    var_dict["main_window"] = stdscr.subwin(
+        screen_dimensions[0] - 2, screen_dimensions[1] -
+        screen_dimensions[1] / 4 - 1, 1, 1)
+    var_dict["main_window"].keypad(True)
+    var_dict["status_window"] = stdscr.subwin(
+        screen_dimensions[0] - 2,
+        screen_dimensions[1] / 4 - 2, 1,
+        screen_dimensions[1] - screen_dimensions[1] / 4)
+    var_dict["status_window_text"] = stdscr.subwin(
+        screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
+        screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
+
+    show_console_in_status_window()
+    stdscr.refresh()
+    var_dict["main_window"].refresh()
+    status_window.refresh()
+    status_window_text.refresh()
 
 
 def display_list_with_numbers(screen, y, x, list_given):
@@ -300,6 +324,8 @@ def end_menu_call(screen, current_step):
                   curses.A_BOLD)
     character = screen.getch()
     while character not in (109, 110, 114):
+        if character == curses.KEY_RESIZE:
+            resize()
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu()
@@ -350,8 +376,8 @@ def adv_ldap_setup_prompts(screen, max_yx):
         tls_y_coord = max_yx[0] / 2 + 4
     else:
         cert_prompt_offset -= 4
-        user_name = ""
-        pass_wd = ""
+        user_name = None
+        pass_wd = None
         tls_y_coord = max_yx[0] / 2
 
     tls_y_or_n = prompt_char_input(screen, tls_y_coord, max_yx[1] / 2 - 22,
@@ -378,8 +404,14 @@ def adv_ldap_setup_prompts(screen, max_yx):
     return [host_ip, port_numb, user_name, pass_wd, tls_y_or_n, tls_cert_path]
 
 
-def adv_ldap_success(screen, conn_info, max_yx, tls_cert_path=0):
+def adv_ldap_success(screen, conn_info, max_yx, user_name,
+                     pass_word, tls_cert_path=0):
     var_dict["conn_info"] = conn_info
+    if user_name is not None:
+        configuration_dict["user"] = user_name
+    if pass_word is not None:
+        configuration_dict["password"] = pass_word
+    show_console_in_status_window()
     if tls_cert_path != 0:
         configuration_dict["tls_cacertfile"] = tls_cert_path
         show_console_in_status_window()
@@ -395,6 +427,8 @@ def adv_ldap_success(screen, conn_info, max_yx, tls_cert_path=0):
                   curses.A_BOLD)
     character = screen.getch()
     while character not in (109, 110):
+        if character == curses.KEY_RESIZE:
+            resize()
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu()
@@ -492,47 +526,50 @@ def menu_ping_ldap_ip():
     ip_string = my_raw_input(var_dict["main_window"], screen_dims[0] / 6 + 4,
                              screen_dims[1] / 2 - len(prompt_ip_string)/2,
                              prompt_ip_string)
-    var_dict["main_window"].addstr(screen_dims[0] / 2 - 5,
+    var_dict["main_window"].addstr(screen_dims[0] / 2 - 7,
                                    screen_dims[1] / 2 - 12,
                                    "Attempting to ping IP...",
                                    curses.color_pair(5) | curses.A_BLINK)
     var_dict["main_window"].refresh()
 
     results = conn_service.ping_ldap_server(ip_string)
-    var_dict["main_window"].addstr(screen_dims[0] / 2 - 5,
+    var_dict["main_window"].addstr(screen_dims[0] / 2 - 7,
                                    screen_dims[1] / 2 - 12,
                                    "                        ")
     if results['exit_status'] == 1 and ip_string != "":
-        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 7,
                                        screen_dims[1] / 2 -
                                        len(results['message']) / 2,
                                        results['message'],
                                        curses.color_pair(6))
-        var_dict["main_window"].addstr(screen_dims[0] / 2 - 3,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 6,
                                        screen_dims[1] / 2 - 26,
                                        "This IP will automatically be used in "
                                        "the next steps.",
                                        curses.color_pair(4))
+        end_msg = "Press 'n' to move on to next step, 'r' to retry, or 'm' " \
+                  "for menu."
         var_dict["main_window"].addstr(screen_dims[0] / 2 - 2,
-                                       screen_dims[1] / 2 - 25,
-                                       "Press 'n' to move on to next step, "
-                                       "or 'm' for menu.", curses.A_BOLD)
+                                       screen_dims[1] / 2 - len(end_msg) / 2,
+                                       end_msg, curses.A_BOLD)
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
         configuration_dict["url"] = results['host_name']
         show_console_in_status_window()
     else:
-        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 7,
                                        screen_dims[1] / 2 -
                                        len(results['message']) / 2,
                                        results['message'],
                                        curses.color_pair(3))
-        var_dict["main_window"].addstr(screen_dims[0] / 2 - 3,
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
                                        screen_dims[1] / 2 - 23,
                                        "Press 'r' to retry this step, "
                                        "or 'm' for menu.")
     temp_char = var_dict["main_window"].getch()
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
+        if temp_char == curses.KEY_RESIZE:
+            resize()
         temp_char = var_dict["main_window"].getch()
     if temp_char == 109:
         display_menu()
@@ -581,10 +618,11 @@ def menu_check_ldap_connection_adv(skip=0):
             if conn_info['exit_status'] == 1:
                 if tls_cert_path is not None:
                     adv_ldap_success(var_dict["main_window"],
-                                     conn_info, max_yx, tls_cert_path)
+                                     conn_info, max_yx, user_name, pass_wd,
+                                     tls_cert_path)
                 else:
                     adv_ldap_success(var_dict["main_window"],
-                                     conn_info, max_yx)
+                                     conn_info, max_yx, user_name, pass_wd)
             else:  # error occurred during ldap ping
                 adv_ldap_fail(var_dict["main_window"], conn_info, max_yx)
         else:
@@ -632,17 +670,7 @@ def menu_get_server_info():
         var_dict["main_window"].addstr(screen_dims[0] / 2 - 2,
                                        screen_dims[1] / 2 - 10,
                                        "Server Information:", curses.A_BOLD)
-        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
-                                       screen_dims[1] / 2 - 25,
-                                       "Press 'n' to move on to next step, "
-                                       "or 'm' for menu.", curses.A_BOLD)
-        c = var_dict["main_window"].getch()
-        while c not in (109, 110):
-            c = var_dict["main_window"].getch()
-        if c == 109:
-            display_menu()
-        if c == 110:
-            menu_check_ldap_suffix()
+        end_menu_call(var_dict["main_window"], 3)
 
 
 def menu_check_ldap_suffix():
@@ -699,6 +727,8 @@ def menu_check_ldap_suffix():
 
         c = var_dict["main_window"].getch()
         while c not in (109, 110):
+            if c == curses.KEY_RESIZE:
+                resize()
             c = var_dict["main_window"].getch()
         if c == 109:
             display_menu()
