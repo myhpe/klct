@@ -1342,27 +1342,18 @@ def display_menu():
         screen.refresh()
         key_press = screen.getch()
         if key_press == curses.KEY_RESIZE:
-            resize()
             stdscr.clear()
             screen.clear()
-            var_dict["status_window"].clear()
-            var_dict["status_window_text"].clear()
             screen_dimensions = stdscr.getmaxyx()
             screen = stdscr.subwin(screen_dimensions[0] - 2,
                                    screen_dimensions[1] -
                                    screen_dimensions[1] / 4 - 1,
                                    1, 1)
             screen.keypad(True)
-            var_dict["status_window"] = stdscr.subwin(
-                screen_dimensions[0] - 2, screen_dimensions[1] / 4 - 2, 1,
-                screen_dimensions[1] - screen_dimensions[1] / 4)
-            var_dict["status_window_text"] = stdscr.subwin(
-                screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
-                screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
-            show_console_in_status_window()
             main_screen_dimensions = screen.getmaxyx()
             screen_half_y = main_screen_dimensions[0]/2
             screen_half_x = main_screen_dimensions[1]/2
+            resize()
             stdscr.refresh()
             screen.refresh()
             status_window.refresh()
