@@ -126,11 +126,17 @@ def show_instructions(screen):
                   screen_dimensions[1]/2 - len(start_instruction)/2,
                   start_instruction, curses.A_BOLD)
     char_press = screen.getch()
-    while char_press != ord('m'):
+    while char_press not in (109, 113):
+        if char_press == curses.KEY_RESIZE:
+            resize()
+            return show_instructions(stdscr)
         char_press = screen.getch()
-    screen.clear()
-    screen.refresh()
-    display_menu()
+    if char_press == 109:
+        screen.clear()
+        screen.refresh()
+        display_menu()
+    elif char_press == 113:
+        sys.exit(0)
 
 
 def my_raw_input_alt(screen, y, x, prompt_string):
@@ -1336,6 +1342,7 @@ def display_menu():
         screen.refresh()
         key_press = screen.getch()
         if key_press == curses.KEY_RESIZE:
+            resize()
             stdscr.clear()
             screen.clear()
             var_dict["status_window"].clear()
