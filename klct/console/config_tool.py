@@ -8,7 +8,8 @@ import yaml
 import logging
 import klct.ldap.ldap_service as conn_service
 from klct.log import logger
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 # sys.path.insert(0, '../ldap')
 # import configTool
 LOG = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ stdscr.scrollok(True)
 curses.noecho()
 LOG.info("Setting up Title screen.")
 start_instruction = "HOS Keystone-LDAP Configuration Tool. " \
-                    "Press 'm' to go to the menu."
+                    "Press 'm' to go to the menu or 'q' to quit."
 if curses.has_colors():  # enable coloring
     curses.start_color()
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -35,6 +36,7 @@ curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
+curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_WHITE)
 stdscr.bkgd(curses.color_pair(1))
 LOG.info("Setting up status window.")
 status_window = stdscr.subwin(stdscr_dimensions[0] - 2,
@@ -127,7 +129,7 @@ def display_list_with_numbers(screen, y, x, list_given):
     num_elements = len(list_given)
     for i in range(num_elements):
         elem_i = str(list_given[i])
-        elem_string = "{i}. {elem}".format(i=i+1, elem=elem_i)
+        elem_string = unicode("{i}. {elem}".format(i=i+1, elem=elem_i))
         screen.addstr(y + i, x, elem_string)
 
 
@@ -150,7 +152,7 @@ def show_instructions(screen):
     screen.clear()
     screen.addstr(screen_dimensions[0]/2,
                   screen_dimensions[1]/2 - len(start_instruction)/2,
-                  start_instruction, curses.A_BOLD)
+                  start_instruction, curses.A_BOLD | curses.A_STANDOUT)
     char_press = screen.getch()
     while char_press not in (109, 113):
         if char_press == curses.KEY_RESIZE:
@@ -346,7 +348,7 @@ def end_menu_call(screen, current_step):
                     }
     screen.addstr(screen_dims[0]/6 + 2, screen_dims[1] / 2 - 28,
                   "Press 'n' for next step, 'r' to retry, or 'm' for menu.",
-                  curses.A_BOLD | curses.color_pair(2) | curses.A_STANDOUT)
+                  curses.A_BOLD | curses.color_pair(8) | curses.A_STANDOUT)
     character = screen.getch()
     while character not in (109, 110, 114):
         if character == curses.KEY_RESIZE:
@@ -441,7 +443,7 @@ def adv_ldap_success(screen, conn_info, max_yx, user_name,
         configuration_dict["tls_cacertfile"] = tls_cert_path
         show_console_in_status_window()
         screen.refresh()
-    screen.addstr(max_yx[0] / 2 - 7,
+    screen.addstr(max_yx[0] / 6 + 18,
                   max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(6) | curses.A_BOLD)
@@ -453,7 +455,7 @@ def adv_ldap_success(screen, conn_info, max_yx, user_name,
     screen.addstr(max_yx[0] / 6 + 2, max_yx[1] / 2 -
                   len(adv_ldap_end_prompt) / 2,
                   adv_ldap_end_prompt,
-                  curses.A_BOLD | curses.color_pair(2) | curses.A_STANDOUT)
+                  curses.A_BOLD | curses.color_pair(8) | curses.A_STANDOUT)
     character = screen.getch()
     while character not in (109, 110, 114):
         if character == curses.KEY_RESIZE:
@@ -468,7 +470,7 @@ def adv_ldap_success(screen, conn_info, max_yx, user_name,
 
 
 def adv_ldap_fail(screen, conn_info, max_yx):
-    screen.addstr(max_yx[0] / 2 - 7,
+    screen.addstr(max_yx[0] / 6 + 18,
                   max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
                   curses.color_pair(3) | curses.A_BOLD)
@@ -514,7 +516,7 @@ def prompt_base_dn(screen):
                       curses.color_pair(message_color) | curses.A_BOLD)
         screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 25,
                       "Press 'n' to move on to next step, or 'm' for menu.",
-                      curses.A_BOLD)
+                      curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(8))
     else:
         message_color = 3
         screen.addstr(screen_dims[0] / 2 - 2,
@@ -523,7 +525,7 @@ def prompt_base_dn(screen):
                       curses.color_pair(message_color) | curses.A_BOLD)
         screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
                       "Press 'r' to retry this step, or 'm' for menu.",
-                      curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(2))
+                      curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(8))
         c = screen.getch()
         while c not in (109, 114):
             if c == curses.KEY_RESIZE:
@@ -589,7 +591,7 @@ def menu_ping_ldap_ip():
         var_dict["main_window"].addstr(screen_dims[0] / 6 + 2,
                                        screen_dims[1] / 2 - len(end_msg) / 2,
                                        end_msg, curses.A_BOLD |
-                                       curses.color_pair(2) |
+                                       curses.color_pair(8) |
                                        curses.A_STANDOUT)
         menu_options[0] = u"1. Ping LDAP Server IP ✓"
         menu_color[0] = curses.color_pair(7)
@@ -606,7 +608,7 @@ def menu_ping_ldap_ip():
                                        "Press 'r' to retry this step, "
                                        "or 'm' for menu.",
                                        curses.A_BOLD | curses.A_STANDOUT |
-                                       curses.color_pair(2))
+                                       curses.color_pair(8))
     temp_char = var_dict["main_window"].getch()
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
         if temp_char == curses.KEY_RESIZE:
@@ -645,7 +647,7 @@ def menu_check_ldap_connection_adv(skip=0):
             tls_y_or_n = adv_ldap_inputs[4]
             tls_cert_path = adv_ldap_inputs[5]
             var_dict["main_window"].addstr(
-                max_yx[0] / 2 - 8, max_yx[1] / 2 - 18,
+                max_yx[0] / 6 + 17, max_yx[1] / 2 - 18,
                 "Attempting to connect to LDAP server...",
                 curses.color_pair(5))
             var_dict["main_window"].refresh()
@@ -654,7 +656,7 @@ def menu_check_ldap_connection_adv(skip=0):
                                                          tls_y_or_n,
                                                          tls_cert_path)
             var_dict["main_window"].addstr(
-                max_yx[0] / 2 - 8,
+                max_yx[0] / 6 + 17,
                 max_yx[1] / 2 - 18,
                 "                                       ")
             if conn_info['exit_status'] == 1:
@@ -785,17 +787,18 @@ def menu_input_user_attributes():
                               "not including the base DN (e.g. ou=Users)?"
         if "suffix" in configuration_dict:
             user_tree_dn = my_raw_input(var_dict["main_window"],
-                                        screen_dims[0] / 2, screen_dims[1] /
+                                        screen_dims[0] / 6 + 4, screen_dims[
+                                            1] /
                                         2 - len(user_tree_dn_prompt) / 2,
                                         user_tree_dn_prompt)
             user_id_attribute = my_raw_input(
                 var_dict["main_window"],
-                screen_dims[0] / 2 + 2,
+                screen_dims[0] / 6 + 6,
                 screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
                 user_id_attr_prompt)
             user_name_attribute = my_raw_input(
                 var_dict["main_window"],
-                screen_dims[0] / 2 + 4,
+                screen_dims[0] / 6 + 8,
                 screen_dims[1] / 2 - len(user_tree_dn_prompt) / 2,
                 user_name_attr_prompt)
         else:
@@ -820,9 +823,9 @@ def menu_input_user_attributes():
                               u"User Name Attribute ✓"
             menu_color[4] = curses.color_pair(7)
             var_dict["main_window"].addstr(
-                screen_dims[0] / 2 - 2,
+                screen_dims[0] / 6 + 11,
                 screen_dims[1] / 2 - len(results['message']) / 2,
-                results['message'])
+                results['message'], curses.color_pair(6) | curses.A_BOLD)
         end_menu_call(var_dict["main_window"], 5)
 
 
@@ -862,51 +865,37 @@ def menu_show_list_user_object_classes():
                 menu_options[5] = \
                     u"6. Show List of User-Related ObjectClasses ✓"
                 menu_color[5] = curses.color_pair(7)
-                var_dict["main_window"].addstr(screen_dims[0] / 2 - 1,
+                var_dict["main_window"].addstr(screen_dims[0] / 6 + 4,
                                                screen_dims[1] / 2 - 15,
                                                "User Object classes:")
                 object_classes_list = return_values['objectclasses'] +\
                     ["None of the above"]
                 display_list_with_numbers(
                     var_dict["main_window"],
-                    screen_dims[0]/2, screen_dims[1]/2 - 15,
+                    screen_dims[0]/6 + 5, screen_dims[1]/2 - 15,
                     object_classes_list)
                 num_obj_classes = len(object_classes_list)
                 choice = my_numb_input(
                     var_dict["main_window"],
-                    screen_dims[0]/2 + num_obj_classes,
+                    screen_dims[0]/6 + num_obj_classes + 5,
                     screen_dims[1]/2 - 15,
                     "Please choose a number.", num_obj_classes)
                 if choice == num_obj_classes:
                     usr_obj_class = my_raw_input(
                         var_dict["main_window"],
-                        screen_dims[0]/2 + num_obj_classes + 2,
+                        screen_dims[0]/6 + num_obj_classes + 7,
                         screen_dims[1]/2 - 15,
                         "Please enter the user object class")
                 else:
                     usr_obj_class = str(object_classes_list[choice - 1])
                 configuration_dict["user_object_class"] = usr_obj_class
-                var_dict["main_window"].addstr(
-                    screen_dims[0] / 2 - 4,
-                    screen_dims[1] / 2 - 23,
-                    "Press 'n' for next, or 'm' to go to the menu.",
-                    curses.A_BOLD | curses.color_pair(2) | curses.A_STANDOUT)
                 show_console_in_status_window()
+                return end_menu_call(var_dict["main_window"], 6)
             else:
                 var_dict["main_window"].addstr(
                     screen_dims[0] / 2 - 3,
                     screen_dims[1] / 2 - 12, "No object classes found.")
-                var_dict["main_window"].addstr(
-                    screen_dims[0] / 2, screen_dims[1] / 2 - 24,
-                    "Press 'r' to re-enter user info, or 'm' for menu.",
-                    curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(2))
-                c = var_dict["main_window"].getch()
-                while c not in (109, 114):
-                    c = var_dict["main_window"].getch()
-                if c == 109:
-                    display_menu()
-                elif c == 114:
-                    menu_input_user_attributes()
+                return end_menu_call(var_dict["main_window"], 6)
         else:
             var_dict["main_window"].addstr(
                 screen_dims[0] / 2 - 2,
@@ -918,16 +907,14 @@ def menu_show_list_user_object_classes():
                 screen_dims[1] / 2 - len(error_prompt) / 2, error_prompt,
                 curses.color_pair(3) | curses.A_BOLD)
             var_dict["main_window"].addstr(
-                screen_dims[0] / 2 - 5,
+                screen_dims[0] / 6 + 2,
                 screen_dims[1] / 2 - 14, "Press 'm' to go to the menu.",
-                curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(2))
-        c = var_dict["main_window"].getch()
-        while c not in (109, 110):
+                curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(8))
             c = var_dict["main_window"].getch()
-        if c == 109:
-            display_menu()
-        elif c == 110:
-            menu_check_user_tree_dn_show_users()
+            while c != 109:
+                c = var_dict["main_window"].getch()
+            if c == 109:
+                display_menu()
 
 
 def check_user_config_dict(screen_dims):
@@ -973,7 +960,7 @@ def menu_check_user_tree_dn_show_users():
         user_id_attribute = configuration_dict["user_id_attribute"]
         object_class = configuration_dict["user_object_class"]
         limit_prompt = "How many users would you like to see?"
-        limit = my_numb_input(var_dict["main_window"], screen_dims[0]/2 - 2,
+        limit = my_numb_input(var_dict["main_window"], screen_dims[0]/6 + 3,
                               screen_dims[1]/8, limit_prompt)
         return_values = conn_service.list_entries(conn, user_tree_dn,
                                                   user_id_attribute,
@@ -984,9 +971,9 @@ def menu_check_user_tree_dn_show_users():
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
-        display_list_with_numbers_test(var_dict["main_window"],
-                                       screen_dims[0]/2,
-                                       screen_dims[1]/8, list_of_users)
+        display_list_with_numbers(var_dict["main_window"],
+                                  screen_dims[0]/6 + 4,
+                                  screen_dims[1]/8, list_of_users)
         var_dict["main_window"].refresh()
         end_menu_call(var_dict["main_window"], 7)
     else:
@@ -1008,7 +995,7 @@ def menu_get_specific_user():
         object_class = configuration_dict["user_object_class"]
         user_name_attribute = configuration_dict["user_name_attribute"]
         name_msg_prompt = "What is the user name you would like to get?"
-        name = my_raw_input(var_dict["main_window"], screen_dims[0]/2 - 2,
+        name = my_raw_input(var_dict["main_window"], screen_dims[0]/6 + 3,
                             screen_dims[1]/2 - len(name_msg_prompt),
                             name_msg_prompt)
         return_values = conn_service.get_entry(conn, user_dn,
@@ -1022,7 +1009,8 @@ def menu_get_specific_user():
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
         user = return_values["entry"]
-        display_list_with_numbers(var_dict["main_window"], screen_dims[0] / 2,
+        display_list_with_numbers(var_dict["main_window"], screen_dims[0] /
+                                  6 + 4,
                                   screen_dims[1] / 2 - 8, user)
         end_menu_call(var_dict["main_window"], 8)
     else:
@@ -1054,17 +1042,17 @@ def menu_input_group_attributes():
         if "suffix" in configuration_dict:
             group_tree_dn = my_raw_input(
                 var_dict["main_window"],
-                screen_dims[0] / 2,
+                screen_dims[0] / 6 + 4,
                 screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
                 group_tree_dn_prompt)
             group_id_attribute = my_raw_input(
                 var_dict["main_window"],
-                screen_dims[0] / 2 + 2,
+                screen_dims[0] / 6 + 6,
                 screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
                 group_id_attr_prompt)
             group_name_attribute = my_raw_input(
                 var_dict["main_window"],
-                screen_dims[0] / 2 + 4,
+                screen_dims[0] / 6 + 8,
                 screen_dims[1] / 2 - len(group_tree_dn_prompt) / 2,
                 group_name_attr_prompt)
         else:
@@ -1089,9 +1077,9 @@ def menu_input_group_attributes():
                 u"9. Input Group ID Attribute/Group Name Attribute ✓"
             menu_color[8] = curses.color_pair(7)
         var_dict["main_window"].addstr(
-            screen_dims[0] / 2 - 2,
+            screen_dims[0] / 6 + 11,
             screen_dims[1] / 2 - len(results['message']) / 2,
-            results['message'])
+            results['message'], curses.color_pair(6) | curses.A_BOLD)
     end_menu_call(var_dict["main_window"], 9)
 
 
@@ -1131,16 +1119,24 @@ def menu_show_list_group_object_classes():
         object_classes_list = return_values['objectclasses'] + \
             ["None of the above"]
         display_list_with_numbers(var_dict["main_window"],
-                                  screen_dims[0] / 2,
+                                  screen_dims[0] / 6 + 5,
                                   screen_dims[1] / 2 - 15,
                                   object_classes_list)
         num_obj_classes = len(object_classes_list)
         choice = my_numb_input(
             var_dict["main_window"],
-            screen_dims[0] / 2 + num_obj_classes, screen_dims[1] / 2 - 15,
+            screen_dims[0] / 6 + num_obj_classes + 5, screen_dims[1] / 2 - 15,
             "Please choose one of the above.", num_obj_classes)
-        configuration_dict["group_object_class"] = \
-            str(object_classes_list[choice - 1])
+        if choice == num_obj_classes:
+            group_obj_class = my_raw_input(
+                var_dict["main_window"],
+                screen_dims[0] / 6 + num_obj_classes + 7,
+                screen_dims[1] / 2 - 15,
+                "Please enter the group object class")
+            configuration_dict["group_object_class"] = group_obj_class
+        else:
+            configuration_dict["group_object_class"] = \
+                str(object_classes_list[choice - 1])
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
