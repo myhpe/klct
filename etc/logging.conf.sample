@@ -29,5 +29,5 @@ args=('../klct.log', 'w')
 class=StreamHandler
 formatter=complex
 #formatter=simple
-level=INFO
+level=ERROR
 args=(sys.stdout,)

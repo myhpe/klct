@@ -8,6 +8,7 @@ import logging
 import ldap3
 import yaml
 from ldap3 import Server, Connection, ALL
+from ldap3.core.exceptions import LDAPStartTLSError
 
 import klct.log.logger
 
@@ -21,13 +22,13 @@ def _check_valid_ip(host_name):
     """
     try:
         socket.inet_aton(host_name)
-        LOG.info("Valid IP/Host Name entered")
+        LOG.debug("Valid IP/Host Name entered")
         return 1
     except socket.error:
         pass
     try:
         socket.inet_pton(socket.AF_INET6, host_name)
-        LOG.info("Valid IPv6 address entered")
+        LOG.debug("Valid IPv6 address entered")
         return 1
     except socket.error:
         LOG.warning("Invalid IP/Host Name entered")
@@ -45,13 +46,13 @@ def _setup_connection(host_name, port_number, user_name, password, want_tls,
     ret_vals = {'exit_status': 0, 'message': None, 'error': None,
                 'server': None, 'conn': None}
     if port_number is None and want_tls == 'n':
-        LOG.info("tls conection not required, setting default port to 389")
+        LOG.debug("tls conection not required, setting default port to 389")
         port_number = 389
     elif port_number is None and want_tls == 'y':
-        LOG.info("tls conection not required, setting default port to 636")
+        LOG.debug("tls conection not required, setting default port to 636")
         port_number = 636
     try:
-        LOG.info("Attempting to create server object with port: " + str(
+        LOG.debug("Attempting to create server object with port: " + str(
             port_number) + ", username: " + str(
             user_name) + ", password: " + str(
             password) + ", tls_requested: " + want_tls +
@@ -60,15 +61,15 @@ def _setup_connection(host_name, port_number, user_name, password, want_tls,
             ret_vals['server'] = Server(host_name, port=port_number,
                                         get_info=ALL)
         else:
-            LOG.info("Attempting to create tls object with certificate file "
-                     "" + tls_cert_path)
+            LOG.debug("Attempting to create tls object with certificate "
+                      "file: " + tls_cert_path)
             try:
                 subprocess.check_output(["openssl", "x509", "-checkend",
                                          "120", "-noout", "-in",
                                          tls_cert_path],
                                         stderr=subprocess.STDOUT,
                                         universal_newlines=True)
-                LOG.info("Tls certificate is valid")
+                LOG.debug("Tls certificate is valid")
             except:
                 LOG.warning("Tls certificate has expired or will expire "
                             "within the next 2 minutes")
@@ -81,26 +82,26 @@ def _setup_connection(host_name, port_number, user_name, password, want_tls,
             ret_vals['server'] = Server(host_name, port=port_number,
                                         use_ssl=True, tls=tls_object,
                                         get_info=ALL)
-            LOG.info("Successfully created tls object")
-        LOG.info("Successfully created server object")
-        LOG.info("Attempting to create connection socket")
+            LOG.debug("Successfully created tls object")
+        LOG.debug("Successfully created server object")
+        LOG.debug("Attempting to create connection socket")
         ret_vals['conn'] = Connection(ret_vals['server'], user=user_name,
                                       password=password)
-        LOG.info("Successfully created socket")
-        LOG.info("Attempting to bind to socket")
+        LOG.debug("Successfully created socket")
+        LOG.debug("Attempting to bind to socket")
         if not ret_vals['conn'].bind():
             LOG.warning("Failed to bind to socket")
             ret_vals['message'] = "Failed to bind to socket (Invalid Log in " \
                                   "credentials)"
             return ret_vals
-        LOG.info("Successfully bound to socket")
+        LOG.debug("Successfully bound to socket")
         if want_tls == 'y':
-            LOG.info("Attempting to start tls on connection")
+            LOG.debug("Attempting to start tls on connection")
             ret_vals['conn'].start_tls()
-            LOG.info("Successfully started tls")
+            LOG.debug("Successfully started tls")
         ret_vals['exit_status'] = 1
         ret_vals['message'] = "Successfully connected!"
-        LOG.info(str(ret_vals['message']))
+        LOG.debug(str(ret_vals['message']))
         return ret_vals
     except ldap3.LDAPSocketOpenError as err:
         if port_number != 636 and want_tls == 'y':
@@ -151,7 +152,7 @@ def ping_ldap_server(host_name):
     new_host_name = ""
     try:
         new_host_name = socket.gethostbyname(host_name)
-        LOG.info("Converted " + host_name + " to an ip: " + new_host_name)
+        LOG.debug("Converted " + host_name + " to an ip: " + new_host_name)
     except socket.gaierror:
         LOG.warning("Unable to convert " + host_name)
         pass
@@ -166,7 +167,7 @@ def ping_ldap_server(host_name):
             subprocess.check_output(["ping", "-c", "1", host_name],
                                     stderr=subprocess.STDOUT,
                                     universal_newlines=True)
-            LOG.info("Successfully pinged " + host_name)
+            LOG.debug("Successfully pinged " + host_name)
             ret_vals['exit_status'] = 1
             ret_vals['message'] = "Successfully pinged " + host_name
         except subprocess.CalledProcessError:
@@ -215,8 +216,8 @@ def retrieve_server_info(conn, server):
     try:
         LOG.info("Attempting to retrieve server Info")
         assert conn.closed is not True
-        LOG.info("Connection socket is open")
-        LOG.info("Creating serverinfo and serverschema files")
+        LOG.debug("Connection socket is open")
+        LOG.debug("Creating serverinfo and serverschema files")
 
         orig_stdout = sys.stdout
 
@@ -232,40 +233,40 @@ def retrieve_server_info(conn, server):
 
         sys.stdout = orig_stdout
 
-        LOG.info("Dumping serverinfo and serverschema to the respective files")
+        LOG.debug("Dumping server info and server schema to the respective "
+                  "files")
         # print >>serverinfo, server.info
         # print >>serverschema, server.schema
-        LOG.info("Closing serverinfo and serverschema files")
+        LOG.debug("Closing serverinfo and serverschema files")
 
-        LOG.info("Searching for ldap attributes")
+        LOG.debug("Searching for ldap attributes")
         if conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT,
                        attributes=ldap3.ALL_ATTRIBUTES,
                        get_operational_attributes=True) is True \
                 and conn.entries:
             version = ""
-            server_type = ""
             i = 0
             try:
                 version_result = \
                     conn.response[0]['attributes']['supportedLDAPVersion']
                 for i in range(len(version_result) - 1):
-                    version = version + str(version_result[i]) + ", "
+                    version += str(version_result[i]) + ", "
                 if len(version_result) == 1:
-                    version = version + str(version_result[i])
+                    version += str(version_result[i])
                 else:
-                    version = version + str(version_result[i+1])
-                LOG.info("Found supported ldap versions: " + version)
+                    version += str(version_result[i+1])
+                LOG.debug("Found supported ldap versions: " + version)
             except:
                 LOG.warning("Unable to find supported ldap versions")
                 version = "N/A"
             try:
                 server_type = conn.response[0]['attributes'][
                     'structuralObjectClass']
-                LOG.info("Found ldap server type: " + server_type)
+                LOG.debug("Found ldap server type: " + server_type)
             except:
                 if str(server.info).lower().find("microsoft") != -1 and str(
                         server.info).lower().find("active directory") != -1:
-                    LOG.info("Found ldap server type: Active Directory")
+                    LOG.debug("Found ldap server type: Active Directory")
                     server_type = "Active Directory"
                 else:
                     LOG.warning("Unable to find ldap server type")
@@ -275,7 +276,7 @@ def retrieve_server_info(conn, server):
             ret_vals['version'] = "Supported LDAP Version: " + version
             ret_vals['type'] = "LDAP Server Type: " + server_type
             return ret_vals
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         ret_vals['error'] = err
     except:
         ret_vals['error'] = sys.exc_info()
@@ -292,7 +293,7 @@ def get_ldap_suffix(server):
     LOG.info("Discovering suffix (base DN) from server information")
     try:
         base_dn = str(server.info.naming_contexts[0])
-        LOG.info("Found suffix (base DN): " + base_dn)
+        LOG.debug("Found suffix (base DN): " + base_dn)
         return {'exit_status': 1, 'base_dn': base_dn}
     except:
         LOG.warning("Unable to find suffix (base DN)")
@@ -307,17 +308,17 @@ def check_ldap_suffix(conn, base_dn):
     LOG.info("Validating given base suffix (base DN): " + base_dn)
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
         search_filter = _create_filter(['cn'], 1)
-        LOG.info("Created search filter: " + search_filter)
+        LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=base_dn, search_filter=search_filter) is \
                 True and conn.entries:
-            LOG.info(base_dn + " is a valid suffix (base DN)")
+            LOG.debug(base_dn + " is a valid suffix (base DN)")
             return {'exit_status': 1, 'message': base_dn + " is a valid "
                                                            "suffix (base DN)"}
         else:
             LOG.warning(base_dn + " is an invalid suffix (base DN)")
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
@@ -337,22 +338,22 @@ def validate_info(conn, dn, id_attribute, name_attribute):
     ret_vals = {'exit_status': 1, 'message': None, 'error': None}
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
 
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL,
                        search_filter='(objectclass=*)',
                        attributes=[ldap3.ALL_ATTRIBUTES],
                        size_limit=1) is True and conn.entries:
-            LOG.info(dn + " is a valid DN")
+            LOG.debug(dn + " is a valid DN")
             if id_attribute in conn.entries[0]:
-                LOG.info(id_attribute + " is a valid id attribute")
+                LOG.debug(id_attribute + " is a valid id attribute")
             else:
                 LOG.warning(id_attribute + " is an invalid id attribute")
                 ret_vals['exit_status'] = 0
                 ret_vals['message'] = id_attribute + " is an invalid id " \
                                                      "attribute"
             if name_attribute in conn.entries[0]:
-                LOG.info(name_attribute + " is a valid name attribute")
+                LOG.debug(name_attribute + " is a valid name attribute")
             else:
                 LOG.warning(name_attribute + " is an invalid name attribute")
                 ret_vals['exit_status'] = 0
@@ -368,7 +369,7 @@ def validate_info(conn, dn, id_attribute, name_attribute):
                                            + ", and " + name_attribute\
                                            + " are valid"
             return ret_vals
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
@@ -385,9 +386,9 @@ def list_object_classes(conn, dn, id_attribute):
     LOG.info("Searching for object classes")
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
         search_filter = _create_filter([id_attribute], 1)
-        LOG.info("Created search filter: " + search_filter)
+        LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL,
                        search_filter=search_filter,
                        attributes=['objectclass']) is True and conn.entries:
@@ -396,11 +397,11 @@ def list_object_classes(conn, dn, id_attribute):
                 for objclass in objclass_list.objectclass:
                     if objclass not in objclasses_list:
                         objclasses_list.append(objclass)
-            LOG.info("Found object classes: " + str(objclasses_list))
+            LOG.debug("Found object classes: " + str(objclasses_list))
             return {'exit_status': 1, 'objectclasses': objclasses_list}
         else:
             LOG.warning("No object classes found")
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'objectclasses': None, 'error': err}
     except:
@@ -412,16 +413,16 @@ def validate_object_class(conn, dn, objectclass):
     LOG.info("Searching for object classes")
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
         search_filter = '(objectclass='+objectclass+')'
-        LOG.info("Created search filter: " + search_filter)
+        LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
                        size_limit=1) is True and conn.entries:
-            LOG.info(objectclass + " is a valid objectclass")
+            LOG.debug(objectclass + " is a valid objectclass")
             return {'exit_status': 1, 'message': objectclass + " is a valid "
                                                                "objectclass",
                     'error': None}
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
@@ -439,21 +440,21 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
     LOG.info("Searching for a list of users")
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
         if limit is None:
-            LOG.info("No limit entered, using 3 as default")
+            LOG.debug("No limit entered, using 3 as default")
             limit = 3
         search_filter = _create_filter([objectclass, id_attribute], 2)
-        LOG.info("Created search filter: " + search_filter)
+        LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL,
                        search_filter=search_filter,
                        attributes=[ldap3.ALL_ATTRIBUTES],
                        size_limit=limit) is True and conn.entries:
-            LOG.info("Found list of entries: " + str(conn.entries))
+            LOG.debug("Found list of entries: " + str(conn.entries))
             return {'exit_status': 1, 'entries': conn.entries}
         else:
             LOG.warning("No entries found")
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'entries': None, 'error': err}
     except:
@@ -468,10 +469,10 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
     LOG.info("Searching for entry: " + name)
     try:
         assert conn.closed is not True
-        LOG.info("Connection is open")
+        LOG.debug("Connection is open")
         search_filter = _create_filter([name_attribute, name, objectclass,
                                         id_attribute], 3)
-        LOG.info("Created search filter: " + search_filter)
+        LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
                        attributes=[ldap3.ALL_ATTRIBUTES]) is True and \
                 conn.entries:
@@ -479,11 +480,11 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
                 LOG.warning("Duplicate entries found for: " + name)
                 return{'exit_status': 0, 'entry': conn.entries,
                        'error': "Duplicate entries found"}
-            LOG.info("Found entry: " + str(conn.entries))
+            LOG.debug("Found entry: " + str(conn.entries))
             return {'exit_status': 1, 'entry': conn.entries}
         else:
             LOG.warning("Entry: " + name + " not found")
-    except exceptions.AssertionError as err:
+    except AssertionError as err:
         LOG.warning(err)
         return {'exit_status': 0, 'entry': None, 'error': err}
     except:
@@ -495,15 +496,16 @@ def save_config(data, path):
     """
     Saves the passed in dictionary data to the specified file
     """
+    LOG.info("Saving configuration options to file.")
     try:
-        LOG.info("Attempting to open file: " + path)
+        LOG.debug("Attempting to open file: " + path)
         fil = open(path, 'w')
     except:
         LOG.warning("Unable to open file: " + path)
         LOG.warning(sys.exc_info())
         return {'exit_status': 0, 'message': "Unable to open file specified"}
-    LOG.info("Dumping configuration options: " + str(data) + " to file: " +
-             path)
+    LOG.debug("Dumping configuration options: " + str(data) + " to file: " +
+              path)
     yaml.dump({'ldap': data}, fil, default_flow_style=False)
     fil.close()
     return {'exit_status': 1, 'message': "Data successfully dumped"}
