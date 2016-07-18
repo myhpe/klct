@@ -505,7 +505,7 @@ def prompt_base_dn(screen):
             menu_check_ldap_suffix()
 
 
-"""MAIN METHODS"""
+"""MENU METHODS"""
 
 
 def show_console_in_status_window():
@@ -1399,5 +1399,7 @@ def display_menu():
             else:
                 display_menu()
     curses.curs_set(1)
+
+
 curses.wrapper(show_instructions)
 curses.endwin()
