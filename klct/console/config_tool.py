@@ -9,16 +9,21 @@ import logging
 import klct.ldap.ldap_service as conn_service
 from klct.log import logger
 
-timestamp_string = str(time.strftime('%a %H:%M:%S'))
+# sys.path.insert(0, '../ldap')
+# import configTool
 LOG = logging.getLogger(__name__)
-LOG.info("test")
+
+
+timestamp_string = str(time.strftime('%a %H:%M:%S'))
 """SET UP"""
+LOG.info("Setting up standard screen.")
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
 stdscr = curses.initscr()  # terminal screen
 stdscr_dimensions = stdscr.getmaxyx()
 stdscr.keypad(True)
 stdscr.scrollok(True)
 curses.noecho()
+LOG.info("Setting up Title screen.")
 start_instruction = "HOS Keystone-LDAP Configuration Tool. " \
                     "Press 'm' to go to the menu."
 if curses.has_colors():  # enable coloring
@@ -31,6 +36,7 @@ curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
 curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
 curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
 stdscr.bkgd(curses.color_pair(1))
+LOG.info("Setting up status window.")
 status_window = stdscr.subwin(stdscr_dimensions[0] - 2,
                               stdscr_dimensions[1] / 4 - 2, 1,
                               stdscr_dimensions[1] - stdscr_dimensions[1]/4)
@@ -40,6 +46,7 @@ status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4,
                                    stdscr_dimensions[1] - stdscr_dimensions[
                                        1]/4 + 1)
 status_window_text.scrollok(True)
+LOG.info("Setting up main screen")
 main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
                             stdscr_dimensions[1] - stdscr_dimensions[1] / 4 - 1
                             , 1, 1)
@@ -74,27 +81,45 @@ var_dict = {"conn_info": "none",
 
 
 def resize():
+    LOG.info("Resizing window")
     var_dict["status_window"].clear()
     var_dict["status_window_text"].clear()
+    LOG.info("Status window cleared.")
     screen_dimensions = stdscr.getmaxyx()
+    LOG.info("Getting new dimensions: " + str(screen_dimensions))
     var_dict["main_window"] = stdscr.subwin(
         screen_dimensions[0] - 2, screen_dimensions[1] -
         screen_dimensions[1] / 4 - 1, 1, 1)
     var_dict["main_window"].keypad(True)
+    LOG.info("New main window created with dimensions: "+
+             str(screen_dimensions[0] - 2)+"x"+
+             str(screen_dimensions[1]-screen_dimensions[1] / 4 - 1)+
+             " at coordinates: "+str(1)+", "+str(1))
     var_dict["status_window"] = stdscr.subwin(
         screen_dimensions[0] - 2,
         screen_dimensions[1] / 4 - 2, 1,
         screen_dimensions[1] - screen_dimensions[1] / 4)
+    LOG.info("New status window created with dimensions: "+str(
+        screen_dimensions[0] - 2)+"x"+str(screen_dimensions[1] / 4 - 2)+
+             " at coordinates: "+str(1)+", "+str(screen_dimensions[1] -
+                                                 screen_dimensions[1] / 4))
     var_dict["status_window_text"] = stdscr.subwin(
         screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
         screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
+    LOG.info("New status window text created with dimensions: "+str(
+        screen_dimensions[0] - 4)+"x"+str(screen_dimensions[1] / 4 - 4)+
+             " at coordinates: "+str(2)+", "+str(screen_dimensions[1] -
+                                                 screen_dimensions[1] / 4 + 1))
 
     show_console_in_status_window()
     stdscr.refresh()
+    LOG.info("Standard Screen Refreshed")
     var_dict["main_window"].refresh()
+    LOG.info("Main window Refreshed")
     status_window.refresh()
+    LOG.info("Status window Refreshed")
     status_window_text.refresh()
-
+    LOG.info("Status window Text Refreshed")
 
 def display_list_with_numbers(screen, y, x, list_given):
     """Elements in list must be string."""
@@ -792,6 +817,7 @@ def menu_input_user_attributes():
                                                  configuration_dict["suffix"]
             configuration_dict["user_id_attribute"] = user_id_attribute
             configuration_dict["user_name_attribute"] = user_name_attribute
+            LOG.info("user id attribute is: " + user_id_attribute)
             show_console_in_status_window()
             menu_options[4] = u"5. Input User ID Attribute/" \
                               u"User Name Attribute ✓"
@@ -861,7 +887,7 @@ def menu_show_list_user_object_classes():
                         screen_dims[1]/2 - 15,
                         "Please enter the user object class")
                 else:
-                    usr_obj_class = object_classes_list[choice - 1]
+                    usr_obj_class = str(object_classes_list[choice - 1])
                 configuration_dict["user_object_class"] = usr_obj_class
                 var_dict["main_window"].addstr(
                     screen_dims[0] / 2 - 4,
@@ -870,7 +896,6 @@ def menu_show_list_user_object_classes():
                     curses.A_BOLD)
                 show_console_in_status_window()
             else:
-                # ERROR OCCURED
                 var_dict["main_window"].addstr(
                     screen_dims[0] / 2 - 3,
                     screen_dims[1] / 2 - 12, "No object classes found.")
@@ -1079,21 +1104,10 @@ def check_group_config_dict(screen_dims):
         var_dict["main_window"].addstr(
             screen_dims[0]/2, screen_dims[1]/2 - len(no_conn_info_msg)/2,
             no_conn_info_msg, curses.color_pair(3) | curses.A_BOLD)
-        if "group_tree_dn" not in configuration_dict or \
-                "group_id_attribute" not in configuration_dict or\
-                "group_object_class" not in configuration_dict:
-            no_group_info_msg = "Could not find group attribute information" \
-                                ". Please complete step 9."
-            var_dict["main_window"].addstr(screen_dims[0] / 2 + 2,
-                                           screen_dims[1] / 2 - len(
-                                           no_group_info_msg)/2,
-                                           no_group_info_msg,
-                                           curses.color_pair(3) |
-                                           curses.A_BOLD)
         return False
     if "group_tree_dn" not in configuration_dict or \
             "group_id_attribute" not in configuration_dict or \
-            "group_object_class" not in configuration_dict:
+            "group_name_attribute" not in configuration_dict:
         no_group_info_msg = "Could not find group attribute information" \
                             ". Please complete step 9."
         var_dict["main_window"].addstr(screen_dims[0]/2 + 2, screen_dims[
@@ -1116,7 +1130,8 @@ def menu_show_list_group_object_classes():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
-        object_classes_list = return_values['objectclasses']
+        object_classes_list = return_values['objectclasses'] + \
+            ["None of the above"]
         display_list_with_numbers(var_dict["main_window"],
                                   screen_dims[0] / 2,
                                   screen_dims[1] / 2 - 15,
@@ -1127,7 +1142,7 @@ def menu_show_list_group_object_classes():
             screen_dims[0] / 2 + num_obj_classes, screen_dims[1] / 2 - 15,
             "Please choose one of the above.", num_obj_classes)
         configuration_dict["group_object_class"] = \
-            object_classes_list[choice - 1]
+            str(object_classes_list[choice - 1])
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
