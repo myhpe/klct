@@ -40,13 +40,13 @@ curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_WHITE)
 stdscr.bkgd(curses.color_pair(1))
 LOG.info("Setting up status window.")
 status_window = stdscr.subwin(stdscr_dimensions[0] - 2,
-                              stdscr_dimensions[1] / 4 - 2, 1,
-                              stdscr_dimensions[1] - stdscr_dimensions[1]/4)
+                              stdscr_dimensions[1] / 3 - 2, 1,
+                              stdscr_dimensions[1] - stdscr_dimensions[1]/3)
 status_window.scrollok(True)
-status_window_text = stdscr.subwin(stdscr_dimensions[0] - 4,
-                                   stdscr_dimensions[1] / 4 - 4, 2,
+status_window_text = stdscr.subwin(stdscr_dimensions[0] - 3,
+                                   stdscr_dimensions[1] / 3 - 4, 2,
                                    stdscr_dimensions[1] - stdscr_dimensions[
-                                       1]/4 + 1)
+                                       1]/3 + 1)
 status_window_text.scrollok(True)
 LOG.info("Setting up main screen")
 main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
@@ -93,25 +93,25 @@ def resize():
         screen_dimensions[0] - 2, screen_dimensions[1] -
         screen_dimensions[1] / 4 - 1, 1, 1)
     var_dict["main_window"].keypad(True)
-    LOG.info("New main window created with dimensions: "+
-             str(screen_dimensions[0] - 2)+"x"+
-             str(screen_dimensions[1]-screen_dimensions[1] / 4 - 1)+
+    LOG.info("New main window created with dimensions: " +
+             str(screen_dimensions[0] - 2)+"x" +
+             str(screen_dimensions[1]-screen_dimensions[1] / 4 - 1) +
              " at coordinates: "+str(1)+", "+str(1))
     var_dict["status_window"] = stdscr.subwin(
         screen_dimensions[0] - 2,
-        screen_dimensions[1] / 4 - 2, 1,
-        screen_dimensions[1] - screen_dimensions[1] / 4)
+        screen_dimensions[1] / 3 - 2, 1,
+        screen_dimensions[1] - screen_dimensions[1] / 3)
     LOG.info("New status window created with dimensions: "+str(
-        screen_dimensions[0] - 2)+"x"+str(screen_dimensions[1] / 4 - 2)+
+        screen_dimensions[0] - 2)+"x"+str(screen_dimensions[1] / 3 - 2) +
              " at coordinates: "+str(1)+", "+str(screen_dimensions[1] -
-                                                 screen_dimensions[1] / 4))
+                                                 screen_dimensions[1] / 3))
     var_dict["status_window_text"] = stdscr.subwin(
-        screen_dimensions[0] - 4, screen_dimensions[1] / 4 - 4, 2,
-        screen_dimensions[1] - screen_dimensions[1] / 4 + 1)
+        screen_dimensions[0] - 4, screen_dimensions[1] / 3 - 4, 2,
+        screen_dimensions[1] - screen_dimensions[1] / 3 + 1)
     LOG.info("New status window text created with dimensions: "+str(
-        screen_dimensions[0] - 4)+"x"+str(screen_dimensions[1] / 4 - 4)+
+        screen_dimensions[0] - 4)+"x"+str(screen_dimensions[1] / 3 - 4) +
              " at coordinates: "+str(2)+", "+str(screen_dimensions[1] -
-                                                 screen_dimensions[1] / 4 + 1))
+                                                 screen_dimensions[1] / 3 + 1))
 
     show_console_in_status_window()
     stdscr.refresh()
@@ -141,7 +141,7 @@ def display_list_with_numbers_test(screen, y, x, list_given):
         elem_i = elem_i.replace('\n', "")
         # elem_temp = elem_i[index + 1]
         # elem_i[index] = ' '
-        elem_string = "{i}. {elem}".format(i=i+1, elem=elem_i)
+        elem_string = unicode("{i}. {elem}".format(i=i+1, elem=elem_i))
         screen.addstr(y + i, x, elem_string)
 
 
