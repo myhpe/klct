@@ -321,6 +321,7 @@ def my_numb_input(screen, y, x, prompt_string, limit=None):
 def setup_menu_call(screen, title=""):
     """Typically called at start of a menu method.
     Clears screen, adds title and returns max y and max x in tuple."""
+    LOG.info("Setting up menu for: " + title)
     screen.clear()
     screen_dims = screen.getmaxyx()
     screen.addstr(screen_dims[0]/6, screen_dims[1]/2 - len(title)/2, title,
@@ -541,6 +542,7 @@ def prompt_base_dn(screen):
 
 
 def show_console_in_status_window():
+    LOG.info("Updating console window.")
     var_dict["status_window"].clear()
     var_dict["status_window_text"].clear()
     var_dict["status_window"].box()
@@ -559,6 +561,7 @@ def show_console_in_status_window():
 def menu_ping_ldap_ip():
     """Displays a screen prompting user for IP address and then
     pings that IP address to see if it able to send a response."""
+    LOG.info("Prompting for IP.")
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "1. Enter/Validate LDAP Server IP")
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
@@ -626,6 +629,7 @@ def menu_check_ldap_connection_adv(skip=0):
     max_yx = setup_menu_call(var_dict["main_window"],
                              "2. Check Connection to LDAP Server")
     if "url" not in configuration_dict:
+        LOG.debug("No ip found.")
         ip_not_exists(var_dict["main_window"], max_yx)
     else:
         if skip == 0:
@@ -635,9 +639,10 @@ def menu_check_ldap_connection_adv(skip=0):
                 ('y', 'n'))
         else:
             y_n = 'y'
-        setup_menu_call(var_dict["main_window"],
-                        "2. Check Connection to LDAP Server")
+        # setup_menu_call(var_dict["main_window"],
+        #                 "2. Check Connection to LDAP Server")
         if y_n == 'y':
+            LOG.info("Prompting for connection information.")
             adv_ldap_inputs = adv_ldap_setup_prompts(var_dict["main_window"],
                                                      max_yx)
             host_ip = adv_ldap_inputs[0]
@@ -781,6 +786,7 @@ def menu_input_user_attributes():
         var_dict["main_window"].getch()
         display_menu()
     else:
+        LOG.info("Prompting for user information.")
         user_id_attr_prompt = "What is the user id attribute?"
         user_name_attr_prompt = "What is the user name attribute?"
         user_tree_dn_prompt = "What is the user tree DN, " \
@@ -817,7 +823,6 @@ def menu_input_user_attributes():
                                                  configuration_dict["suffix"]
             configuration_dict["user_id_attribute"] = user_id_attribute
             configuration_dict["user_name_attribute"] = user_name_attribute
-            LOG.info("user id attribute is: " + user_id_attribute)
             show_console_in_status_window()
             menu_options[4] = u"5. Input User ID Attribute/" \
                               u"User Name Attribute ✓"
@@ -862,6 +867,7 @@ def menu_show_list_user_object_classes():
                 screen_dims[1] / 2 - len(blnk_retrieve_str) / 2,
                 blnk_retrieve_str)
             if return_values['exit_status'] == 1:
+                LOG.info("Displaying user object classes.")
                 menu_options[5] = \
                     u"6. Show List of User-Related ObjectClasses ✓"
                 menu_color[5] = curses.color_pair(7)
@@ -968,6 +974,7 @@ def menu_check_user_tree_dn_show_users():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
+        LOG.info("Listing Users.")
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
@@ -1006,6 +1013,7 @@ def menu_get_specific_user():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
+        LOG.info("Getting specific user.")
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
         user = return_values["entry"]
@@ -1033,6 +1041,7 @@ def menu_input_group_attributes():
         var_dict["main_window"].getch()
         display_menu()
     else:
+        LOG.info("Prompting for group info.")
         group_id_attr_prompt = "What is the group id attribute?"
         group_name_attr_prompt = "What is the group name attribute?"
         group_tree_dn_prompt = \
@@ -1116,6 +1125,7 @@ def menu_show_list_group_object_classes():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
+        LOG.info("Displaying group object classes.")
         object_classes_list = return_values['objectclasses'] + \
             ["None of the above"]
         display_list_with_numbers(var_dict["main_window"],
@@ -1171,6 +1181,7 @@ def menu_check_group_tree_dn_show_groups():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
+        LOG.info("Listing groups.")
         menu_options[9] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[9] = curses.color_pair(7)
         list_of_groups = return_values["entries"]
@@ -1207,6 +1218,7 @@ def menu_get_specific_group():
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
+        LOG.info("Getting specific group.")
         groups = return_values["entry"]
         display_list_with_numbers(var_dict["main_window"], screen_dims[0]/2,
                                   screen_dims[1]/4, groups)
@@ -1223,6 +1235,7 @@ def menu_get_specific_group():
 
 
 def menu_additional_config_options():
+    LOG.info("Prompting for additional configuration options.")
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "13. Add Additional Configuration Options")
     use_pool_prompt = "What is use_pool? (e.g. True/False)"
