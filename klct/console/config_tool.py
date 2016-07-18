@@ -995,7 +995,7 @@ def menu_get_specific_user():
         object_class = configuration_dict["user_object_class"]
         user_name_attribute = configuration_dict["user_name_attribute"]
         name_msg_prompt = "What is the user name you would like to get?"
-        name = my_raw_input(var_dict["main_window"], screen_dims[0]/6 + 2,
+        name = my_raw_input(var_dict["main_window"], screen_dims[0]/6 + 3,
                             screen_dims[1]/2 - len(name_msg_prompt),
                             name_msg_prompt)
         return_values = conn_service.get_entry(conn, user_dn,
@@ -1077,9 +1077,9 @@ def menu_input_group_attributes():
                 u"9. Input Group ID Attribute/Group Name Attribute ✓"
             menu_color[8] = curses.color_pair(7)
         var_dict["main_window"].addstr(
-            screen_dims[0] / 6 + 10,
+            screen_dims[0] / 6 + 11,
             screen_dims[1] / 2 - len(results['message']) / 2,
-            results['message'])
+            results['message'], curses.color_pair(6) | curses.A_BOLD)
     end_menu_call(var_dict["main_window"], 9)
 
 
@@ -1119,16 +1119,24 @@ def menu_show_list_group_object_classes():
         object_classes_list = return_values['objectclasses'] + \
             ["None of the above"]
         display_list_with_numbers(var_dict["main_window"],
-                                  screen_dims[0] / 2,
+                                  screen_dims[0] / 6 + 5,
                                   screen_dims[1] / 2 - 15,
                                   object_classes_list)
         num_obj_classes = len(object_classes_list)
         choice = my_numb_input(
             var_dict["main_window"],
-            screen_dims[0] / 2 + num_obj_classes, screen_dims[1] / 2 - 15,
+            screen_dims[0] / 6 + num_obj_classes + 5, screen_dims[1] / 2 - 15,
             "Please choose one of the above.", num_obj_classes)
-        configuration_dict["group_object_class"] = \
-            str(object_classes_list[choice - 1])
+        if choice == num_obj_classes:
+            group_obj_class = my_raw_input(
+                var_dict["main_window"],
+                screen_dims[0] / 6 + num_obj_classes + 7,
+                screen_dims[1] / 2 - 15,
+                "Please enter the group object class")
+            configuration_dict["group_object_class"] = group_obj_class
+        else:
+            configuration_dict["group_object_class"] = \
+                str(object_classes_list[choice - 1])
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
