@@ -50,7 +50,7 @@ status_window_text = stdscr.subwin(stdscr_dimensions[0] - 3,
 status_window_text.scrollok(True)
 LOG.info("Setting up main screen")
 main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
-                            stdscr_dimensions[1] - stdscr_dimensions[1] / 4 - 1
+                            stdscr_dimensions[1] - stdscr_dimensions[1] / 3 - 1
                             , 1, 1)
 main_window.keypad(True)
 main_window.scrollok(True)
@@ -82,7 +82,7 @@ var_dict = {"conn_info": "none",
 """HELPER METHODS"""
 
 
-def resize():
+def resize_windows():
     LOG.info("Resizing window")
     var_dict["status_window"].clear()
     var_dict["status_window_text"].clear()
@@ -91,11 +91,11 @@ def resize():
     LOG.info("Getting new dimensions: " + str(screen_dimensions))
     var_dict["main_window"] = stdscr.subwin(
         screen_dimensions[0] - 2, screen_dimensions[1] -
-        screen_dimensions[1] / 4 - 1, 1, 1)
+        screen_dimensions[1] / 3 - 1, 1, 1)
     var_dict["main_window"].keypad(True)
     LOG.info("New main window created with dimensions: " +
              str(screen_dimensions[0] - 2)+"x" +
-             str(screen_dimensions[1]-screen_dimensions[1] / 4 - 1) +
+             str(screen_dimensions[1]-screen_dimensions[1] / 3 - 1) +
              " at coordinates: "+str(1)+", "+str(1))
     var_dict["status_window"] = stdscr.subwin(
         screen_dimensions[0] - 2,
@@ -156,7 +156,7 @@ def show_instructions(screen):
     char_press = screen.getch()
     while char_press not in (109, 113):
         if char_press == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
             return show_instructions(stdscr)
         char_press = screen.getch()
     if char_press == 109:
@@ -353,7 +353,7 @@ def end_menu_call(screen, current_step):
     character = screen.getch()
     while character not in (109, 110, 114):
         if character == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu()
@@ -373,7 +373,7 @@ def ip_not_exists(screen, screen_dims):
     key_press = screen.getch()
     while key_press not in (109, 112):  # 109 == m, 112 == p
         if key_press == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         key_press = screen.getch()
     if key_press == 109:
         display_menu()
@@ -460,7 +460,7 @@ def adv_ldap_success(screen, conn_info, max_yx, user_name,
     character = screen.getch()
     while character not in (109, 110, 114):
         if character == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         character = screen.getch()
     if character == 109:  # 109 == m
         display_menu()
@@ -471,6 +471,7 @@ def adv_ldap_success(screen, conn_info, max_yx, user_name,
 
 
 def adv_ldap_fail(screen, conn_info, max_yx):
+    menu_color[1] = curses.color_pair(3)
     screen.addstr(max_yx[0] / 6 + 18,
                   max_yx[1] / 2 - len(conn_info['message']) / 2,
                   conn_info['message'],
@@ -478,11 +479,11 @@ def adv_ldap_fail(screen, conn_info, max_yx):
 
     screen.addstr(max_yx[0] / 6 + 2, max_yx[1] / 2 - 18,
                   "Press 'r' to retry, or 'm' for menu.", curses.color_pair(
-            2) | curses.A_STANDOUT | curses.A_BOLD)
+            8) | curses.A_STANDOUT | curses.A_BOLD)
     char = screen.getch()
     while char not in (109, 114):
         if char == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         char = screen.getch()
     if char == 109:
         display_menu()
@@ -530,7 +531,7 @@ def prompt_base_dn(screen):
         c = screen.getch()
         while c not in (109, 114):
             if c == curses.KEY_RESIZE:
-                resize()
+                resize_windows()
             c = screen.getch()
         if c == 109:
             display_menu()
@@ -605,6 +606,8 @@ def menu_ping_ldap_ip():
         configuration_dict["url"] = results['host_name']
         show_console_in_status_window()
     else:
+        if "url" not in configuration_dict:
+            menu_color[0] = curses.color_pair(3)
         var_dict["main_window"].addstr(screen_dims[0] / 6 + 7,
                                        screen_dims[1] / 2 -
                                        len(results['message']) / 2,
@@ -619,7 +622,7 @@ def menu_ping_ldap_ip():
     temp_char = var_dict["main_window"].getch()
     while temp_char not in (110, 109, 114):  # 109 = 'm', 110 = 'n', 114 = 'r'
         if temp_char == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         temp_char = var_dict["main_window"].getch()
     if temp_char == 109:
         display_menu()
@@ -643,8 +646,8 @@ def menu_check_ldap_connection_adv(skip=0):
                 ('y', 'n'))
         else:
             y_n = 'y'
-        # setup_menu_call(var_dict["main_window"],
-        #                 "2. Check Connection to LDAP Server")
+        setup_menu_call(var_dict["main_window"],
+                        "2. Check Connection to LDAP Server")
         if y_n == 'y':
             LOG.info("Prompting for connection information.")
             adv_ldap_inputs = adv_ldap_setup_prompts(var_dict["main_window"],
@@ -718,6 +721,7 @@ def menu_get_server_info():
                                            ldap_type, curses.color_pair(5))
             var_dict["main_window"].refresh()
         else:
+            menu_color[2] = curses.color_pair(3)
             var_dict["main_window"].addstr(screen_dims[0]/2 + 1,
                                            screen_dims[1]/2, "Error",
                                            curses.color_pair(3))
@@ -751,6 +755,7 @@ def menu_check_ldap_suffix():
                                        screen_dims[1] / 2 - 9,
                                        "                   ")
         if ret_vals["exit_status"] == 0:
+            menu_color[3] = curses.color_pair(3)
             var_dict["main_window"].addstr(screen_dims[0] / 2 + 1,
                                            screen_dims[1] / 2 - 23,
                                            "Unable to find base dn. "
@@ -835,6 +840,8 @@ def menu_input_user_attributes():
                 screen_dims[0] / 6 + 11,
                 screen_dims[1] / 2 - len(results['message']) / 2,
                 results['message'], curses.color_pair(6) | curses.A_BOLD)
+        else:
+            menu_color[4] = curses.color_pair(3)
         end_menu_call(var_dict["main_window"], 5)
 
 
@@ -902,6 +909,7 @@ def menu_show_list_user_object_classes():
                 show_console_in_status_window()
                 return end_menu_call(var_dict["main_window"], 6)
             else:
+                menu_color[5] = curses.color_pair(3)
                 var_dict["main_window"].addstr(
                     screen_dims[0] / 2 - 3,
                     screen_dims[1] / 2 - 12, "No object classes found.")
@@ -988,6 +996,7 @@ def menu_check_user_tree_dn_show_users():
         var_dict["main_window"].refresh()
         end_menu_call(var_dict["main_window"], 7)
     else:
+        menu_color[6] = curses.color_pair(3)
         err_msg = "Unable to retrieve users"
         var_dict["main_window"].addstr(screen_dims[0]/2 - 2,
                                        screen_dims[1]/2 - len(err_msg)/2,
@@ -1026,6 +1035,7 @@ def menu_get_specific_user():
                                   screen_dims[1] / 2 - 8, user)
         end_menu_call(var_dict["main_window"], 8)
     else:
+        menu_color[7] = curses.color_pair(3)
         err_msg = "Unable to retrieve user"
         var_dict["main_window"].addstr(screen_dims[0]/2 - 2, screen_dims[1]/2 -
                                        len(err_msg)/2, err_msg,
@@ -1089,6 +1099,8 @@ def menu_input_group_attributes():
             menu_options[8] = \
                 u"9. Input Group ID Attribute/Group Name Attribute ✓"
             menu_color[8] = curses.color_pair(7)
+        else:
+            menu_color[8] = curses.color_pair(3)
         var_dict["main_window"].addstr(
             screen_dims[0] / 6 + 11,
             screen_dims[1] / 2 - len(results['message']) / 2,
@@ -1156,6 +1168,7 @@ def menu_show_list_group_object_classes():
         menu_color[9] = curses.color_pair(7)
         end_menu_call(var_dict["main_window"], 10)
     else:
+        menu_color[9] = curses.color_pair(3)
         err_msg = "Unable to retrieve group object classes"
         var_dict["main_window"].addstr(
             screen_dims[0] / 2 - 2,
@@ -1186,14 +1199,15 @@ def menu_check_group_tree_dn_show_groups():
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         LOG.info("Listing groups.")
-        menu_options[9] = u"11. Check Group Tree DN and Show List of Groups ✓"
-        menu_color[9] = curses.color_pair(7)
+        menu_options[10] = u"11. Check Group Tree DN and Show List of Groups ✓"
+        menu_color[10] = curses.color_pair(7)
         list_of_groups = return_values["entries"]
         display_list_with_numbers(var_dict["main_window"],
                                   screen_dims[0] / 2, screen_dims[1]/4,
                                   list_of_groups)
         end_menu_call(var_dict["main_window"], 11)
     else:
+        menu_color[10] = curses.color_pair(3)
         err_msg = "Unable to retrieve groups"
         var_dict["main_window"].addstr(screen_dims[0] / 2 - 2,
                                        screen_dims[1] / 2 - len(err_msg) / 2,
@@ -1226,10 +1240,11 @@ def menu_get_specific_group():
         groups = return_values["entry"]
         display_list_with_numbers(var_dict["main_window"], screen_dims[0]/2,
                                   screen_dims[1]/4, groups)
-        menu_options[10] = u"12. Get Specific Group ✓"
-        menu_color[10] = curses.color_pair(7)
+        menu_options[11] = u"12. Get Specific Group ✓"
+        menu_color[11] = curses.color_pair(7)
         end_menu_call(var_dict["main_window"], 12)
     else:
+        menu_color[11] = curses.color_pair(3)
         err_msg = "Unable to retrieve group"
         var_dict["main_window"].addstr(screen_dims[0] / 2 - 2,
                                        screen_dims[1] / 2 - len(err_msg) / 2,
@@ -1266,6 +1281,8 @@ def menu_additional_config_options():
         screen_dims[1]/2 - len(user_enabled_default_prompt)/2,
         user_enabled_default_prompt)
     show_console_in_status_window()
+    menu_color[12] = curses.color_pair(7)
+    menu_options[12] = u"13. Add Additional Configuration Options ✓"
     end_menu_call(var_dict["main_window"], 13)
 
 
@@ -1280,6 +1297,8 @@ def menu_create_config():
     if return_values["exit_status"] == 1:
         menu_options[13] = u"14. Save/Create Configuration File ✓"
         menu_color[13] = curses.color_pair(7)
+    else:
+        menu_color[13] = curses.color_pair(3)
     return_msg = return_values["message"]
     var_dict["main_window"].addstr(screen_dims[0]/2 - 4,
                                    screen_dims[1]/2 - len(return_msg)/2,
@@ -1290,7 +1309,7 @@ def menu_create_config():
     c = var_dict["main_window"].getch()
     while c != 109:
         if c == curses.KEY_RESIZE:
-            resize()
+            resize_windows()
         c = var_dict["main_window"].getch()
     if c == 109:
         display_menu()
@@ -1301,7 +1320,7 @@ def display_menu():
     stdscr_screen_dimensions = stdscr.getmaxyx()
     screen = stdscr.subwin(stdscr_screen_dimensions[0] - 2,
                            stdscr_screen_dimensions[1] -
-                           stdscr_screen_dimensions[1] / 4 - 1,
+                           stdscr_screen_dimensions[1] / 3 - 1,
                            1, 1)
     screen.keypad(True)
     screen_dimensions = screen.getmaxyx()
@@ -1373,13 +1392,13 @@ def display_menu():
             screen_dimensions = stdscr.getmaxyx()
             screen = stdscr.subwin(screen_dimensions[0] - 2,
                                    screen_dimensions[1] -
-                                   screen_dimensions[1] / 4 - 1,
+                                   screen_dimensions[1] / 3 - 1,
                                    1, 1)
             screen.keypad(True)
             main_screen_dimensions = screen.getmaxyx()
             screen_half_y = main_screen_dimensions[0]/2
             screen_half_x = main_screen_dimensions[1]/2
-            resize()
+            resize_windows()
             stdscr.refresh()
             screen.refresh()
             status_window.refresh()
