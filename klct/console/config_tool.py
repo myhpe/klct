@@ -50,7 +50,7 @@ status_window_text = stdscr.subwin(stdscr_dimensions[0] - 3,
 status_window_text.scrollok(True)
 LOG.info("Setting up main screen")
 main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
-                            stdscr_dimensions[1] - stdscr_dimensions[1] / 4 - 1
+                            stdscr_dimensions[1] - stdscr_dimensions[1] / 3 - 1
                             , 1, 1)
 main_window.keypad(True)
 main_window.scrollok(True)
@@ -91,11 +91,11 @@ def resize():
     LOG.info("Getting new dimensions: " + str(screen_dimensions))
     var_dict["main_window"] = stdscr.subwin(
         screen_dimensions[0] - 2, screen_dimensions[1] -
-        screen_dimensions[1] / 4 - 1, 1, 1)
+        screen_dimensions[1] / 3 - 1, 1, 1)
     var_dict["main_window"].keypad(True)
     LOG.info("New main window created with dimensions: " +
              str(screen_dimensions[0] - 2)+"x" +
-             str(screen_dimensions[1]-screen_dimensions[1] / 4 - 1) +
+             str(screen_dimensions[1]-screen_dimensions[1] / 3 - 1) +
              " at coordinates: "+str(1)+", "+str(1))
     var_dict["status_window"] = stdscr.subwin(
         screen_dimensions[0] - 2,
@@ -1284,7 +1284,7 @@ def display_menu():
     stdscr_screen_dimensions = stdscr.getmaxyx()
     screen = stdscr.subwin(stdscr_screen_dimensions[0] - 2,
                            stdscr_screen_dimensions[1] -
-                           stdscr_screen_dimensions[1] / 4 - 1,
+                           stdscr_screen_dimensions[1] / 3 - 1,
                            1, 1)
     screen.keypad(True)
     screen_dimensions = screen.getmaxyx()
@@ -1356,7 +1356,7 @@ def display_menu():
             screen_dimensions = stdscr.getmaxyx()
             screen = stdscr.subwin(screen_dimensions[0] - 2,
                                    screen_dimensions[1] -
-                                   screen_dimensions[1] / 4 - 1,
+                                   screen_dimensions[1] / 3 - 1,
                                    1, 1)
             screen.keypad(True)
             main_screen_dimensions = screen.getmaxyx()
