@@ -185,7 +185,7 @@ def my_raw_input_alt(screen, y, x, prompt_string):
     return str_input
 
 
-def my_raw_input(screen, y, x, prompt_string):
+def my_raw_input(screen, y, x, prompt_string, default=""):
     curses.noecho()
     curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
@@ -234,6 +234,9 @@ def my_raw_input(screen, y, x, prompt_string):
         screen.move(y + 1, x_coord)
         c = screen.getch()
     string_input = ''.join(str_input)
+    string_input = string_input.strip()
+    if string_input == "":
+        return default
     curses.curs_set(False)
     curses.noecho()
     return string_input
