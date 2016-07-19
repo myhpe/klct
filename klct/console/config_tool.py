@@ -25,8 +25,6 @@ stdscr.keypad(True)
 stdscr.scrollok(True)
 curses.noecho()
 LOG.info("Setting up Title screen.")
-start_instruction = "HOS Keystone-LDAP Configuration Tool. " \
-                    "Press 'm' to go to the menu or 'q' to quit."
 if curses.has_colors():  # enable coloring
     curses.start_color()
 curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -150,9 +148,14 @@ def show_instructions(screen):
     curses.curs_set(0)
     screen_dimensions = screen.getmaxyx()
     screen.clear()
+    start_instruction = "HOS Keystone-LDAP Configuration Tool."
     screen.addstr(screen_dimensions[0]/2,
                   screen_dimensions[1]/2 - len(start_instruction)/2,
-                  start_instruction, curses.A_BOLD | curses.A_STANDOUT)
+                  start_instruction, curses.A_BOLD | curses.A_COLOR)
+    startup_commands = "Press 'm' to go to the menu or 'q' to quit."
+    screen.addstr(screen_dimensions[0]/2 + 1, screen_dimensions[1]/2 - len(
+        startup_commands)/2, startup_commands)
+    screen.refresh()
     char_press = screen.getch()
     while char_press not in (109, 113):
         if char_press == curses.KEY_RESIZE:
@@ -326,7 +329,7 @@ def setup_menu_call(screen, title=""):
     screen_dims = screen.getmaxyx()
     screen.addstr(screen_dims[0]/6, screen_dims[1]/2 - len(title)/2, title,
                   curses.color_pair(1) | curses.A_BOLD |
-                  curses.A_UNDERLINE | curses.A_STANDOUT)
+                  curses.A_UNDERLINE | curses.A_COLOR)
     return screen_dims
 
 
