@@ -362,8 +362,8 @@ def validate_info(conn, dn, id_attribute, name_attribute):
                     ret_vals['message'] = name_attribute + \
                                                " is an invalid name attribute"
                 else:
-                    ret_vals['message'] = name_attribute + \
-                                               " is a valid name attribute"
+                    ret_vals['message'] += ", " + name_attribute + \
+                                           " is an invalid name attribute"
             if ret_vals['exit_status'] == 1:
                 ret_vals['message'] = dn + ", " \
                                            + id_attribute \
@@ -499,7 +499,6 @@ def save_config(data, path):
     """
     LOG.info("Saving configuration options to file.")
     try:
-        LOG.info("is it a file?: " + str(os.path.isfile("temp_conf_*")))
         fils = glob.glob("temp_conf_*")
         for entry in fils:
             os.remove(entry)

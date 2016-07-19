@@ -504,7 +504,7 @@ def prompt_base_dn(screen):
     screen.refresh()
     results = conn_service.check_ldap_suffix(conn, base_dn)
     screen.addstr(screen_dims[0] / 2 - 2, screen_dims[1] / 2 - 10,
-                  "                    ")
+                  "                              ")
     if results["exit_status"] == 1:
         configuration_dict["suffix"] = base_dn
         menu_options[3] = u"4. Check LDAP Suffix ✓"
@@ -550,7 +550,6 @@ def show_console_in_status_window():
                                           curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
         global timestamp_string
-        LOG.info("timestamp: " + timestamp_string)
         tmpfile = "temp_conf_" + timestamp_string + ".yaml"
         conn_service.save_config(configuration_dict, tmpfile)
         configuration_dict_yaml_str = yaml.dump(configuration_dict,
@@ -835,6 +834,11 @@ def menu_input_user_attributes():
                 screen_dims[0] / 6 + 11,
                 screen_dims[1] / 2 - len(results['message']) / 2,
                 results['message'], curses.color_pair(6) | curses.A_BOLD)
+        else:
+            var_dict["main_window"].addstr(
+                screen_dims[0] / 6 + 11,
+                screen_dims[1] / 2 - len(results['message']) / 2,
+                results['message'], curses.color_pair(3) | curses.A_BOLD)
         end_menu_call(var_dict["main_window"], 5)
 
 
@@ -862,10 +866,12 @@ def menu_show_list_user_object_classes():
         conn_info = var_dict["conn_info"]
         conn = conn_info['conn']
         # base_dn = configuration_dict["suffix"]
-        if "user_id_attribute" in configuration_dict:
+        if "user_id_attribute" in configuration_dict and "user_tree_dn" in \
+                configuration_dict:
             user_id_attribute = configuration_dict["user_id_attribute"]
+            user_dn = configuration_dict["user_tree_dn"]
             return_values = conn_service.list_object_classes(
-                conn, configuration_dict["user_tree_dn"], user_id_attribute)
+                conn, user_dn, user_id_attribute)
             var_dict["main_window"].addstr(
                 screen_dims[0] / 2 - 2,
                 screen_dims[1] / 2 - len(blnk_retrieve_str) / 2,
@@ -896,6 +902,17 @@ def menu_show_list_user_object_classes():
                         screen_dims[0]/6 + num_obj_classes + 7,
                         screen_dims[1]/2 - 15,
                         "Please enter the user object class")
+                    ret = conn_service.validate_object_class(conn, user_dn,
+                                                             usr_obj_class)
+                    color = 3
+                    if ret['exit_status'] == 1:
+                        configuration_dict["user_object_class"] = usr_obj_class
+                        color = 6
+                    var_dict["main_window"].addstr(
+                            screen_dims[0] / 2 - 3,
+                            screen_dims[1] / 2 - 12, ret['message'],
+                            curses.color_pair(color) | curses.A_BOLD)
+                    end_menu_call(var_dict["main_window"], 6)
                 else:
                     usr_obj_class = str(object_classes_list[choice - 1])
                 configuration_dict["user_object_class"] = usr_obj_class
@@ -1089,10 +1106,15 @@ def menu_input_group_attributes():
             menu_options[8] = \
                 u"9. Input Group ID Attribute/Group Name Attribute ✓"
             menu_color[8] = curses.color_pair(7)
-        var_dict["main_window"].addstr(
+            var_dict["main_window"].addstr(
             screen_dims[0] / 6 + 11,
             screen_dims[1] / 2 - len(results['message']) / 2,
             results['message'], curses.color_pair(6) | curses.A_BOLD)
+        else:
+            var_dict["main_window"].addstr(
+                screen_dims[0] / 6 + 11,
+                screen_dims[1] / 2 - len(results['message']) / 2,
+                results['message'], curses.color_pair(3) | curses.A_BOLD)
     end_menu_call(var_dict["main_window"], 9)
 
 
@@ -1140,14 +1162,24 @@ def menu_show_list_group_object_classes():
         choice = my_numb_input(
             var_dict["main_window"],
             screen_dims[0] / 6 + num_obj_classes + 5, screen_dims[1] / 2 - 15,
-            "Please choose one of the above.", num_obj_classes)
+            "Please choose a number.", num_obj_classes)
         if choice == num_obj_classes:
             group_obj_class = my_raw_input(
                 var_dict["main_window"],
                 screen_dims[0] / 6 + num_obj_classes + 7,
                 screen_dims[1] / 2 - 15,
                 "Please enter the group object class")
-            configuration_dict["group_object_class"] = group_obj_class
+            ret = conn_service.validate_object_class(conn, group_dn,
+                                                     group_obj_class)
+            color = 3
+            if ret['exit_status'] == 1:
+                configuration_dict["group_object_class"] = group_obj_class
+                color = 6
+            var_dict["main_window"].addstr(
+                    screen_dims[0] / 2 - 3,
+                    screen_dims[1] / 2 - 12, ret['message'],
+                    curses.color_pair(color) | curses.A_BOLD)
+            end_menu_call(var_dict["main_window"], 10)
         else:
             configuration_dict["group_object_class"] = \
                 str(object_classes_list[choice - 1])
