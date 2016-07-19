@@ -4,6 +4,7 @@ import subprocess
 import socket
 import sys
 import logging
+import glob
 
 import ldap3
 import yaml
@@ -498,7 +499,10 @@ def save_config(data, path):
     """
     LOG.info("Saving configuration options to file.")
     try:
-        LOG.debug("Attempting to open file: " + path)
+        LOG.info("is it a file?: " + str(os.path.isfile("temp_conf_*")))
+        fils = glob.glob("temp_conf_*")
+        for entry in fils:
+            os.remove(entry)
         fil = open(path, 'w')
     except:
         LOG.warning("Unable to open file: " + path)

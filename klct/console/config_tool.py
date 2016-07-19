@@ -15,7 +15,7 @@ sys.setdefaultencoding('utf8')
 LOG = logging.getLogger(__name__)
 
 
-timestamp_string = str(time.strftime('%a %H:%M:%S'))
+timestamp_string = str(time.strftime('%B_%d_%Y_%X'))
 """SET UP"""
 LOG.info("Setting up standard screen.")
 locale.setlocale(locale.LC_ALL, "")  # for unicode support
@@ -550,6 +550,10 @@ def show_console_in_status_window():
     var_dict["status_window_text"].addstr(0, 0, "Keystone-LDAP Configuration",
                                           curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
+        global timestamp_string
+        LOG.info("timestamp: " + timestamp_string)
+        tmpfile = "temp_conf_" + timestamp_string + ".yaml"
+        conn_service.save_config(configuration_dict, tmpfile)
         configuration_dict_yaml_str = yaml.dump(configuration_dict,
                                                 stream=None,
                                                 default_flow_style=False)
