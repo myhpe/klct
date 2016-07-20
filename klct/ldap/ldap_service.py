@@ -499,6 +499,7 @@ def save_config(data, path):
     """
     LOG.info("Saving configuration options to file.")
     try:
+        LOG.info("is it a file?: " + str(os.path.isfile("temp_conf_*")))
         fils = glob.glob("temp_conf_*")
         for entry in fils:
             os.remove(entry)
