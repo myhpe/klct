@@ -4,7 +4,6 @@ import subprocess
 import socket
 import sys
 import logging
-import glob
 
 import ldap3
 import yaml
@@ -449,7 +448,7 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL,
                        search_filter=search_filter,
-                       attributes=[ldap3.ALL_ATTRIBUTES],
+                       attributes=[id_attribute],
                        size_limit=limit) is True and conn.entries:
             LOG.debug("Found list of entries: " + str(conn.entries))
             return {'exit_status': 1, 'entries': conn.entries}
@@ -475,7 +474,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
                                         id_attribute], 3)
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
-                       attributes=[ldap3.ALL_ATTRIBUTES]) is True and \
+                       attributes=[id_attribute, name_attribute]) is True and \
                 conn.entries:
             if len(conn.entries) > 1:
                 LOG.warning("Duplicate entries found for: " + name)
@@ -493,16 +492,18 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
     return {'exit_status': 0, 'entry': None, 'error': sys.exc_info()}
 
 
+def str_presenter(dumper, data):
+  if len(data.splitlines()) > 1:
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+  return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+
 def save_config(data, path):
     """
     Saves the passed in dictionary data to the specified file
     """
     LOG.info("Saving configuration options to file.")
     try:
-        LOG.info("is it a file?: " + str(os.path.isfile("temp_conf_*")))
-        fils = glob.glob("temp_conf_*")
-        for entry in fils:
-            os.remove(entry)
         fil = open(path, 'w')
     except:
         LOG.warning("Unable to open file: " + path)
@@ -510,7 +511,13 @@ def save_config(data, path):
         return {'exit_status': 0, 'message': "Unable to open file specified"}
     LOG.debug("Dumping configuration options: " + str(data) + " to file: " +
               path)
-    yaml.dump({'ldap': data}, fil, default_flow_style=False)
+    yaml.add_representer(str, str_presenter)
+    dict = {'keystone_domainldap_conf': {'cert_settings': {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears here\n-----END CERTIFICATE-----"""},
+                                         'domain_settings': {'name': 'ad', 'description': "Dedicated domain for ad users"},
+                                         'conf_settings':{'identity': {'driver': "ldap"}},
+                                         'ldap': data,
+                                         'tls_req_cert': "demand"}}
+    yaml.dump(dict, fil, default_flow_style=False)
     fil.close()
     return {'exit_status': 1, 'message': "Data successfully dumped"}
 
