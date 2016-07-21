@@ -504,7 +504,8 @@ def _ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
 
     def _str_presenter(dumper, data):
         if len(data.splitlines()) > 1:
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+            return dumper.represent_scalar('tag:yaml.org,2002:str', data,
+                                           style='|')
         return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
@@ -512,10 +513,18 @@ def _ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 
+# def _dict_to_ordered(data):
+#     order = []
+#     od =
+
+
 def save_config(data, path):
     """
     Saves the passed in dictionary data to the specified file
     """
+    if path is None:
+        return _ordered_dump(data, path, Dumper=yaml.SafeDumper,
+                             default_flow_style=False)
     LOG.info("Saving configuration options to file.")
     try:
         fil = open(path, 'w')
@@ -526,12 +535,16 @@ def save_config(data, path):
     LOG.debug("Dumping configuration options: " + str(data) + " to file: " +
               path)
 
-    cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears here\n-----END CERTIFICATE-----"""}
-    domain_dict = OrderedDict([('name', "ad"), ('description', "Dedicated domain for ad users")])
-    conf_dict = OrderedDict([('identity', OrderedDict([('driver', "ldap")])), ('ldap', data)])
+    # ordered_data = _dict_to_ordered(data)
+    cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears\
+                  here\n-----END CERTIFICATE-----"""}
+    dmn_dict = OrderedDict([('name', "ad"),
+                            ('description', "Dedicated domain for ad users")])
+    conf_dict = OrderedDict([('identity',
+                OrderedDict([('driver', "ldap")])), ('ldap', data)])
     od = OrderedDict([('keystone_domainldap_conf',
             OrderedDict([('cert_settings', cert_dict),
-                         ('domain_settings', domain_dict),
+                         ('domain_settings', dmn_dict),
                          ('conf_settings', conf_dict)]))])
     LOG.info(str(od))
     # yaml.dump(dict, fil, default_flow_style=False)
