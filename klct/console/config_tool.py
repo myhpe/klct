@@ -1056,6 +1056,7 @@ def menu_check_user_tree_dn_show_users():
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
+        var_dict["list_of_users"] = list_of_users
         var_dict["main_window"].addstr(screen_dims[0]/6 + 6, 0, "List of "
                                                                 "Users",
                                        curses.A_BOLD | curses.A_UNDERLINE |
@@ -1079,6 +1080,14 @@ def menu_get_specific_user():
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "8. Get a Specific User")
     if check_user_config_dict(screen_dims):
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 6, 0, "List of "
+                                                                  "Users",
+                                       curses.A_BOLD | curses.A_UNDERLINE |
+                                       curses.color_pair(8))
+        display_list_with_numbers_test(var_dict["main_window"],
+                                       screen_dims[0] / 6 + 7,
+                                       0, var_dict["list_of_users"])
+        var_dict["main_window"].refresh()
         conn = var_dict["conn_info"]["conn"]
         user_dn = configuration_dict["user_tree_dn"]
         user_id_attribute = configuration_dict["user_id_attribute"]
@@ -1297,6 +1306,7 @@ def menu_check_group_tree_dn_show_groups():
             var_dict["main_window"],
             screen_dims[0]/6 + 4, screen_dims[1]/2 - len(limit_prompt)/2,
             limit_prompt)
+        limit = min(limit, maximum)
         return_values = conn_service.list_entries(conn,
                                                   group_dn,
                                                   group_id_attribute,
