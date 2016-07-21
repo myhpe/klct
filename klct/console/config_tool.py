@@ -516,33 +516,41 @@ def prompt_base_dn(screen):
         configuration_dict["suffix"] = base_dn
         menu_options[3] = u"4. Check LDAP Suffix ✓"
         menu_color[3] = curses.color_pair(7)
-        message_color = 6
         show_console_in_status_window()
-        screen.addstr(screen_dims[0] / 2 - 2,
-                      screen_dims[1] / 2 - len(results['message']) / 2,
-                      results['message'],
-                      curses.color_pair(message_color) | curses.A_BOLD)
-        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 25,
-                      "Press 'n' to move on to next step, or 'm' for menu.",
+        end_message = "{base} is valid and has been added to " \
+                      "configuration.".format(
+                        base=base_dn)
+        screen.addstr(screen_dims[0] / 2 - 4,
+                      screen_dims[1] / 2 - len(
+                      end_message) / 2,
+                      end_message,
+                      curses.color_pair(6) |
+                      curses.A_BOLD)
+        screen.addstr(screen_dims[0] / 6 + 2, screen_dims[1] / 2 - 25,
+                      "Press 'n' for next step, 'r' to retry, or 'm' for "
+                      "menu.",
                       curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(8))
     else:
         message_color = 3
-        screen.addstr(screen_dims[0] / 2 - 2,
+        screen.addstr(screen_dims[0] / 6 + 2,
                       screen_dims[1] / 2 - len(results['message']) / 2,
                       results['message'],
                       curses.color_pair(message_color) | curses.A_BOLD)
-        screen.addstr(screen_dims[0] / 2 - 3, screen_dims[1] / 2 - 23,
-                      "Press 'r' to retry this step, or 'm' for menu.",
+        screen.addstr(screen_dims[0] / 6 + 2, screen_dims[1] / 2 - 28,
+                      "Press 'n' for next step, 'r' to retry, or 'm' for "
+                      "menu.",
                       curses.A_BOLD | curses.A_STANDOUT | curses.color_pair(8))
+    c = screen.getch()
+    while c not in (109, 110, 114):
+        if c == curses.KEY_RESIZE:
+            resize_windows()
         c = screen.getch()
-        while c not in (109, 114):
-            if c == curses.KEY_RESIZE:
-                resize_windows()
-            c = screen.getch()
-        if c == 109:
-            display_menu()
-        elif c == 114:
-            menu_check_ldap_suffix()
+    if c == 109:
+        display_menu()
+    elif c == 110:
+        menu_input_user_attributes()
+    elif c == 114:
+        menu_check_ldap_suffix()
 
 
 """MENU METHODS"""
@@ -785,6 +793,15 @@ def menu_check_ldap_suffix():
                                     ('y', 'n'))
             if y_n == 'n':
                 return prompt_base_dn(var_dict["main_window"])
+            else:
+                end_message = "{base} added to configuration file.".format(
+                    base=base_dn)
+                var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
+                                               screen_dims[1] / 2 - len(
+                                               end_message) / 2,
+                                               end_message,
+                                               curses.color_pair(6) |
+                                               curses.A_BOLD)
 
         end_menu_call(var_dict["main_window"], 4)
 
@@ -925,6 +942,14 @@ def menu_show_list_user_object_classes():
                 else:
                     usr_obj_class = str(object_classes_list[choice - 1])
                 configuration_dict["user_object_class"] = usr_obj_class
+                end_message = "{usr_ojbc} has been added to " \
+                              "configuration.".format(usr_ojbc=usr_obj_class)
+                var_dict["main_window"].addstr(screen_dims[0]/2 - 4,
+                                               screen_dims[1]/2 - len(
+                                                   end_message)/2,
+                                               end_message,
+                                               curses.color_pair(6) |
+                                               curses.A_BOLD)
                 show_console_in_status_window()
                 return end_menu_call(var_dict["main_window"], 6)
             else:
@@ -1009,9 +1034,12 @@ def menu_check_user_tree_dn_show_users():
         menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
-        display_list_with_numbers(var_dict["main_window"],
-                                  screen_dims[0]/6 + 4,
-                                  screen_dims[1]/8, list_of_users)
+        var_dict["main_window"].addstr(screen_dims[0]/6 + 5, 0, "List of "
+                                                                "Users",
+                                       curses.A_BOLD | curses.A_UNDERLINE)
+        display_list_with_numbers_test(var_dict["main_window"],
+                                       screen_dims[0]/6 + 6,
+                                       0, list_of_users)
         var_dict["main_window"].refresh()
         end_menu_call(var_dict["main_window"], 7)
     else:
@@ -1050,8 +1078,8 @@ def menu_get_specific_user():
         menu_color[7] = curses.color_pair(7)
         user = return_values["entry"]
         display_list_with_numbers(var_dict["main_window"], screen_dims[0] /
-                                  6 + 4,
-                                  screen_dims[1] / 2 - 8, user)
+                                  6 + 5,
+                                  0, user)
         end_menu_call(var_dict["main_window"], 8)
     else:
         menu_color[7] = curses.color_pair(3)
@@ -1190,8 +1218,16 @@ def menu_show_list_group_object_classes():
                 curses.color_pair(color) | curses.A_BOLD)
             end_menu_call(var_dict["main_window"], 10)
         else:
-            configuration_dict["group_object_class"] = \
-                str(object_classes_list[choice - 1])
+            group_obj_class = str(object_classes_list[choice - 1])
+            configuration_dict["group_object_class"] = group_obj_class
+        end_message = "{group_ojbc} has been added to " \
+                      "configuration.".format(group_ojbc=group_obj_class)
+        var_dict["main_window"].addstr(screen_dims[0] / 2 - 4,
+                                       screen_dims[1] / 2 - len(
+                                           end_message) / 2,
+                                       end_message,
+                                       curses.color_pair(6) |
+                                       curses.A_BOLD)
         show_console_in_status_window()
         menu_options[9] = u"10. Show List of Group Related ObjectClasses ✓"
         menu_color[9] = curses.color_pair(7)
@@ -1218,7 +1254,7 @@ def menu_check_group_tree_dn_show_groups():
         limit_prompt = "How many groups would you like to see?"
         limit = my_numb_input(
             var_dict["main_window"],
-            screen_dims[0]/2 - 2, screen_dims[1]/2 - len(limit_prompt)/2,
+            screen_dims[0]/6 + 4, screen_dims[1]/2 - len(limit_prompt)/2,
             limit_prompt)
         return_values = conn_service.list_entries(conn,
                                                   group_dn,
@@ -1231,9 +1267,12 @@ def menu_check_group_tree_dn_show_groups():
         menu_options[10] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[10] = curses.color_pair(7)
         list_of_groups = return_values["entries"]
-        display_list_with_numbers(var_dict["main_window"],
-                                  screen_dims[0] / 2, screen_dims[1]/4,
-                                  list_of_groups)
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 6, 0, "List of "
+                                                                  "Groups",
+                                       curses.A_BOLD | curses.A_UNDERLINE)
+        display_list_with_numbers_test(var_dict["main_window"],
+                                       screen_dims[0] / 6 + 7, 0,
+                                       list_of_groups)
         end_menu_call(var_dict["main_window"], 11)
     else:
         menu_color[10] = curses.color_pair(3)
@@ -1255,7 +1294,7 @@ def menu_get_specific_group():
         object_class = configuration_dict["group_object_class"]
         group_name_attribute = configuration_dict["group_name_attribute"]
         name_msg_prompt = "What is the group name you would like to get?"
-        name = my_raw_input(var_dict["main_window"], screen_dims[0] / 2 - 2,
+        name = my_raw_input(var_dict["main_window"], screen_dims[0] / 6 + 4,
                             screen_dims[1] / 2 - len(name_msg_prompt),
                             name_msg_prompt)
         return_values = conn_service.get_entry(conn, group_dn,
@@ -1266,9 +1305,10 @@ def menu_get_specific_group():
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         LOG.info("Getting specific group.")
-        groups = return_values["entry"]
-        display_list_with_numbers(var_dict["main_window"], screen_dims[0]/2,
-                                  screen_dims[1]/4, groups)
+        group = return_values["entry"]
+        display_list_with_numbers(var_dict["main_window"],
+                                  screen_dims[0]/6 + 6,
+                                  0, group)
         menu_options[11] = u"12. Get Specific Group ✓"
         menu_color[11] = curses.color_pair(7)
         end_menu_call(var_dict["main_window"], 12)
