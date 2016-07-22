@@ -848,10 +848,23 @@ def menu_input_user_attributes():
                 "No Suffix (base DN) found. Press any key to go to the menu.")
             var_dict["main_window"].getch()
             return display_menu()
+        attempt_message = "Verifying information... Please wait."
+        blank_message = "                                     "
+        var_dict["main_window"].addstr(
+            screen_dims[0] / 6 + 17,
+            screen_dims[1] / 2 - len(attempt_message) / 2,
+            attempt_message,
+            curses.color_pair(5))
+        var_dict["main_window"].refresh()
         results = conn_service.validate_info(
             var_dict["conn_info"]["conn"],
             user_tree_dn + "," + configuration_dict["suffix"],
             user_id_attribute, user_name_attribute)
+        var_dict["main_window"].addstr(
+            screen_dims[0] / 6 + 17,
+            screen_dims[1] / 2 - len(attempt_message) / 2,
+            blank_message)
+        var_dict["main_window"].refresh()
         if results["exit_status"] == 1:
             configuration_dict["user_tree_dn"] = user_tree_dn +\
                                                  "," +\
@@ -1080,6 +1093,8 @@ def menu_get_specific_user():
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "8. Get a Specific User")
     if check_user_config_dict(screen_dims):
+        if "list_of_users" not in var_dict:
+            return menu_check_user_tree_dn_show_users()
         var_dict["main_window"].addstr(screen_dims[0] / 6 + 6, 0, "List of "
                                                                   "Users",
                                        curses.A_BOLD | curses.A_UNDERLINE |
@@ -1102,15 +1117,21 @@ def menu_get_specific_user():
                                                object_class,
                                                user_name_attribute,
                                                name)
+        screen_dims = setup_menu_call(var_dict["main_window"],
+                                      "8. Get a Specific User")
     else:
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
-        LOG.info("Getting specific user.")
+        LOG.info("Successfully retrieved specific user.")
         menu_options[7] = u"8. Get a Specific User ✓"
         menu_color[7] = curses.color_pair(7)
         user = return_values["entry"]
+        var_dict["main_window"].addstr(screen_dims[0]/6 + 5, 0, "User: "
+                                       "{usr}".format(usr=name),
+                                       curses.A_UNDERLINE | curses.A_BOLD |
+                                       curses.color_pair(8))
         display_list_with_numbers(var_dict["main_window"], screen_dims[0] /
-                                  6 + 5,
+                                  6 + 6,
                                   0, user)
         end_menu_call(var_dict["main_window"], 8)
     else:
@@ -1163,12 +1184,24 @@ def menu_input_group_attributes():
                 "No Suffix (base DN) found. Press any key to go to the menu.")
             var_dict["main_window"].getch()
             display_menu()
-
+        attempt_message = "Verifying information... Please wait."
+        blank_message = "                                     "
+        var_dict["main_window"].addstr(
+            screen_dims[0] / 6 + 17,
+            screen_dims[1] / 2 - len(attempt_message) / 2,
+            attempt_message,
+            curses.color_pair(5))
+        var_dict["main_window"].refresh()
         results = conn_service.validate_info(var_dict["conn_info"]["conn"],
                                              group_tree_dn + "," +
                                              configuration_dict["suffix"],
                                              group_id_attribute,
                                              group_name_attribute)
+        var_dict["main_window"].addstr(
+            screen_dims[0] / 6 + 17,
+            screen_dims[1] / 2 - len(attempt_message) / 2,
+            blank_message)
+        var_dict["main_window"].refresh()
         if results["exit_status"] == 1:
             configuration_dict["group_id_attribute"] = group_id_attribute
             configuration_dict["group_name_attribute"] = group_name_attribute
@@ -1318,6 +1351,7 @@ def menu_check_group_tree_dn_show_groups():
         menu_options[10] = u"11. Check Group Tree DN and Show List of Groups ✓"
         menu_color[10] = curses.color_pair(7)
         list_of_groups = return_values["entries"]
+        var_dict["list_of_groups"] = list_of_groups
         var_dict["main_window"].addstr(screen_dims[0] / 6 + 6, 0, "List of "
                                                                   "Groups",
                                        curses.A_BOLD | curses.A_UNDERLINE)
@@ -1339,13 +1373,21 @@ def menu_get_specific_group():
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "12. Get Specific Group")
     if check_group_config_dict(screen_dims):
+        if "list_of_groups" not in var_dict:
+            return menu_check_group_tree_dn_show_groups()
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 6, 0, "List of "
+                                                                  "Groups",
+                                       curses.A_BOLD | curses.A_UNDERLINE)
+        display_list_with_numbers_test(var_dict["main_window"],
+                                       screen_dims[0] / 6 + 7, 0,
+                                       var_dict["list_of_groups"])
         conn = var_dict["conn_info"]["conn"]
         group_dn = configuration_dict["group_tree_dn"]
         group_id_attribute = configuration_dict["group_id_attribute"]
         object_class = configuration_dict["group_object_class"]
         group_name_attribute = configuration_dict["group_name_attribute"]
         name_msg_prompt = "What is the group name you would like to get?"
-        name = my_raw_input(var_dict["main_window"], screen_dims[0] / 6 + 4,
+        name = my_raw_input(var_dict["main_window"], screen_dims[0] / 6 + 3,
                             screen_dims[1] / 2 - len(name_msg_prompt),
                             name_msg_prompt)
         return_values = conn_service.get_entry(conn, group_dn,
@@ -1357,6 +1399,10 @@ def menu_get_specific_group():
     if return_values["exit_status"] == 1:
         LOG.info("Getting specific group.")
         group = return_values["entry"]
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 5, 0, "Group: "
+                                       "{grp}".format(grp=name),
+                                       curses.A_UNDERLINE | curses.A_BOLD |
+                                       curses.color_pair(8))
         display_list_with_numbers(var_dict["main_window"],
                                   screen_dims[0]/6 + 6,
                                   0, group)
