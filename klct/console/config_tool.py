@@ -1215,6 +1215,7 @@ def menu_input_group_attributes():
             screen_dims[1] / 2 - len(attempt_message) / 2,
             blank_message)
         var_dict["main_window"].refresh()
+        color = 6
         if results["exit_status"] == 1:
             configuration_dict["group_id_attribute"] = group_id_attribute
             configuration_dict["group_name_attribute"] = group_name_attribute
@@ -1224,28 +1225,19 @@ def menu_input_group_attributes():
             menu_options[8] = \
                 u"9. Input Group ID Attribute/Group Name Attribute ✓"
             menu_color[8] = curses.color_pair(7)
-        else:
-            var_dict["main_window"].addstr(
-                screen_dims[0] / 6 + 11,
-                screen_dims[1] / 2 - len(results['message']) / 2,
-                results['message'], curses.color_pair(3) | curses.A_BOLD)
-            error_message = "The information entered is incorrect. Please " \
-                            "retry this step."
+            update_message = "Configuration has been updated with this " \
+                             "information."
             var_dict["main_window"].addstr(
                 screen_dims[0] / 6 + 12,
-                screen_dims[1] / 2 - len(error_message) / 2,
-                error_message, curses.color_pair(3) | curses.A_BOLD)
+                screen_dims[1] / 2 - len(update_message) / 2,
+                update_message, curses.color_pair(6) | curses.A_BOLD)
+        else:
+            color = 3
             menu_color[8] = curses.color_pair(3)
         var_dict["main_window"].addstr(
             screen_dims[0] / 6 + 11,
             screen_dims[1] / 2 - len(results['message']) / 2,
-            results['message'], curses.color_pair(6) | curses.A_BOLD)
-        update_message = "Configuration has been updated with this " \
-                         "information."
-        var_dict["main_window"].addstr(
-            screen_dims[0] / 6 + 12,
-            screen_dims[1] / 2 - len(update_message) / 2,
-            update_message, curses.color_pair(6) | curses.A_BOLD)
+            results['message'], curses.color_pair(color) | curses.A_BOLD)
     end_menu_call(var_dict["main_window"], 9)
 
 
