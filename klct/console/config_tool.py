@@ -76,7 +76,8 @@ var_dict = {"conn_info": "none",
             "object_class": "none",
             "status_window": status_window,
             "status_window_text": status_window_text,
-            "main_window": main_window}
+            "main_window": main_window,
+            "port_added": False}
 
 """HELPER METHODS"""
 
@@ -237,6 +238,7 @@ def my_raw_input(screen, y, x, prompt_string, default=""):
     string_input = ''.join(str_input)
     string_input = string_input.strip()
     if string_input == "":
+        screen.addstr(y+1, x+1, str(default))
         return default
     curses.curs_set(False)
     curses.noecho()
@@ -297,13 +299,17 @@ def prompt_char_input(screen, y, x, prompt_string, list_given):
     return ch_input
 
 
-def my_numb_input(screen, y, x, prompt_string, limit=None):
+def my_numb_input(screen, y, x, prompt_string, limit=None, default=None):
     curses.echo()
     curses.curs_set(True)
     screen.addstr(y, x, prompt_string, curses.color_pair(2))
     screen.addstr(y + 1, x, ">            ")
     screen.refresh()
     numb_input = screen.getstr(y + 1, x + 1, 10)
+    numb_input = numb_input.strip()
+    if numb_input == "":
+        screen.addstr(y+1, x+1, str(default))
+        return default
     while not numb_input.isdigit():
         screen.addstr(y, x,
                       "                                                      ")
@@ -391,7 +397,8 @@ def ip_not_exists(screen, screen_dims):
 def adv_ldap_setup_prompts(screen, max_yx):
     host_ip = configuration_dict["url"]
     temp_str = my_numb_input(screen, max_yx[0] / 6 + 4, max_yx[1] / 2 - 22,
-                             "Please enter the port number. Default is 389.")
+                             "Please enter the port number. Default is "
+                             "389.", None, 389)
 
     port_numb = int(temp_str)
 
@@ -440,8 +447,10 @@ def adv_ldap_setup_prompts(screen, max_yx):
 def adv_ldap_success(screen, conn_info, max_yx, user_name,
                      pass_word, port_numb, tls_cert_path=0):
     var_dict["conn_info"] = conn_info
-    configuration_dict["url"] = configuration_dict["url"] + ":" + \
-        str(port_numb)
+    if var_dict["port_added"] == False:
+        configuration_dict["url"] = configuration_dict["url"] + ":" + \
+            str(port_numb)
+        var_dict["port_added"] = True
     if user_name is not None:
         configuration_dict["user"] = user_name
     if pass_word is not None:
@@ -1425,30 +1434,40 @@ def menu_additional_config_options():
     LOG.info("Prompting for additional configuration options.")
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "13. Add Additional Configuration Options")
-    use_pool_prompt = "What is use_pool? (e.g. True/False)"
+
+    use_tls_prompt = "What is use_tls? (True/False) Default: True"
+
     user_enabled_attribute_prompt = \
         "What is user_enabled_attribute? (e.g. userAccountControl)"
+
     user_enabled_mask_prompt = "What is user_enabled_mask? (e.g. 2)"
+
     user_enabled_default_prompt = "What is user_enabled_default? (e.g. 512)"
-    configuration_dict["use_pool"] = my_raw_input(
-        var_dict["main_window"], screen_dims[0]/2 - 2,
-        screen_dims[1]/2 - len(use_pool_prompt)/2, use_pool_prompt)
+
+    use_tls_string = my_raw_input(
+        var_dict["main_window"], screen_dims[0]/6 + 4,
+        screen_dims[1]/2 - len(use_tls_prompt)/2, use_tls_prompt, "True")
+    configuration_dict["use_tls"] = use_tls_string
     show_console_in_status_window()
+
     configuration_dict["user_enabled_attribute"] = my_raw_input(
-        var_dict["main_window"], screen_dims[0] / 2,
+        var_dict["main_window"], screen_dims[0] / 6 + 6,
         screen_dims[1] / 2 - len(user_enabled_attribute_prompt) / 2,
         user_enabled_attribute_prompt)
     show_console_in_status_window()
+
     configuration_dict["user_enabled_mask"] = my_numb_input(
-        var_dict["main_window"], screen_dims[0] / 2 + 2,
+        var_dict["main_window"], screen_dims[0] / 6 + 8,
         screen_dims[1] / 2 - len(user_enabled_mask_prompt) / 2,
         user_enabled_mask_prompt)
     show_console_in_status_window()
+
     configuration_dict["user_enabled_default"] = my_numb_input(
-        var_dict["main_window"], screen_dims[0]/2 + 4,
+        var_dict["main_window"], screen_dims[0]/6 + 10,
         screen_dims[1]/2 - len(user_enabled_default_prompt)/2,
         user_enabled_default_prompt)
     show_console_in_status_window()
+
     menu_color[12] = curses.color_pair(7)
     menu_options[12] = u"13. Add Additional Configuration Options ✓"
     end_menu_call(var_dict["main_window"], 13)
