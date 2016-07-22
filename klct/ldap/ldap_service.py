@@ -475,7 +475,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
                                         id_attribute], 3)
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
-                       attributes=[id_attribute, name_attribute]) is True and \
+                       attributes=[ldap3.ALL_ATTRIBUTES]) is True and \
                 conn.entries:
             if len(conn.entries) > 1:
                 LOG.warning("Duplicate entries found for: " + name)
