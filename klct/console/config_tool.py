@@ -1442,47 +1442,117 @@ def menu_additional_config_options():
     tls_req_cert_prompt = \
         "What is tls_req_cert? (demand/never/allow) Default: demand"
 
-    user_enabled_mask_prompt = "What is user_enabled_mask? (e.g. 2)"
+    use_pool_prompt = "What is use_pool? This is for LDAP connection " \
+                      "pooling. (" \
+                      "True/False)"
 
-    user_enabled_default_prompt = "What is user_enabled_default? (e.g. 512)"
+    use_auth_pool_prompt = "What is use_auth_pool? (True/False) Default: True"
 
-    use_tls_string = my_raw_input(
-        var_dict["main_window"], screen_dims[0]/6 + 4,
-        screen_dims[1]/2 - len(use_tls_prompt)/2, use_tls_prompt, "True")
-    while use_tls_string not in ("True", "False"):
-        var_dict["main_window"].addstr(screen_dims[0]/6 + 5, screen_dims[
-            1]/2 - len(use_tls_prompt)/2, "                                  ")
+    if "tls_cacertfile" in configuration_dict:
+        use_tls_string = my_raw_input(
+            var_dict["main_window"], screen_dims[0]/6 + 4,
+            screen_dims[1]/2 - len(use_tls_prompt)/2, use_tls_prompt, True)
+        if use_tls_string in ("True", "t", "T", "true"):
+            use_tls_string = True
+        elif use_tls_string in ("False", "false", "f", "F"):
+            use_tls_string = False
+        while use_tls_string not in (True, False):
+            var_dict["main_window"].addstr(screen_dims[0]/6 + 5, screen_dims[
+                1]/2 - len(use_tls_prompt)/2,
+                                           "                                 ")
+            use_tls_string = my_raw_input(
+                var_dict["main_window"], screen_dims[0] / 6 + 4,
+                screen_dims[1] / 2 - len(use_tls_prompt) / 2, use_tls_prompt,
+                "True")
+            if use_tls_string in ("True", "t", "T", "true"):
+                use_tls_string = True
+            elif use_tls_string in ("False", "false", "f", "F"):
+                use_tls_string = False
+    else:
+        use_tls_prompt = "What is use_tls? (True/False) Default: False"
         use_tls_string = my_raw_input(
             var_dict["main_window"], screen_dims[0] / 6 + 4,
             screen_dims[1] / 2 - len(use_tls_prompt) / 2, use_tls_prompt,
-            "True")
+            False)
+        if use_tls_string in ("True", "t", "T", "true"):
+            use_tls_string = True
+        elif use_tls_string in ("False", "false", "f", "F"):
+            use_tls_string = False
+        while use_tls_string not in (True, False):
+            var_dict["main_window"].addstr(screen_dims[0] / 6 + 5, screen_dims[
+                1] / 2 - len(use_tls_prompt) / 2,
+                                           "                                 ")
+            use_tls_string = my_raw_input(
+                var_dict["main_window"], screen_dims[0] / 6 + 4,
+                screen_dims[1] / 2 - len(use_tls_prompt) / 2,
+                use_tls_prompt,
+                False)
+            if use_tls_string in ("True", "t", "T", "true"):
+                use_tls_string = True
+            elif use_tls_string in ("False", "false", "f", "F"):
+                use_tls_string = False
     configuration_dict["use_tls"] = use_tls_string
     show_console_in_status_window()
 
     tls_req_cert = my_raw_input(
-        var_dict["main_window"], screen_dims[0] / 6 + 6,
+        var_dict["main_window"], screen_dims[0] / 6 + 8,
         screen_dims[1] / 2 - len(tls_req_cert_prompt) / 2,
         tls_req_cert_prompt, "demand")
     while tls_req_cert not in ("demand", "allow", "never"):
-        var_dict["main_window"].addstr(screen_dims[0] / 6 + 7, screen_dims[
-            1]/2 - len(use_tls_prompt)/2, "                                  ")
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 9, screen_dims[
+            1]/2 - len(tls_req_cert_prompt)/2,
+                                       "                                  ")
         tls_req_cert = my_raw_input(
-            var_dict["main_window"], screen_dims[0] / 6 + 6,
+            var_dict["main_window"], screen_dims[0] / 6 + 8,
             screen_dims[1] / 2 - len(tls_req_cert_prompt) / 2,
             tls_req_cert_prompt, "demand")
     configuration_dict["tls_req_cert"] = tls_req_cert
     show_console_in_status_window()
 
-    configuration_dict["user_enabled_mask"] = my_numb_input(
-        var_dict["main_window"], screen_dims[0] / 6 + 8,
-        screen_dims[1] / 2 - len(user_enabled_mask_prompt) / 2,
-        user_enabled_mask_prompt)
+    use_pool = my_raw_input(
+        var_dict["main_window"], screen_dims[0] / 6 + 12,
+        screen_dims[1] / 2 - len(use_pool_prompt) / 2,
+        use_pool_prompt)
+    if use_pool in ("True", "t", "T", "true"):
+        use_pool = True
+    elif use_pool in ("False", "false", "f", "F"):
+        use_pool = False
+    while use_pool not in (True, False):
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 13, screen_dims[
+            1] / 2 - len(use_pool_prompt) / 2,
+                                       "                                 ")
+        use_pool = my_raw_input(
+            var_dict["main_window"], screen_dims[0] / 6 + 12,
+            screen_dims[1] / 2 - len(use_pool_prompt) / 2,
+            use_pool_prompt)
+        if use_pool in ("True", "t", "T", "true"):
+            use_pool = True
+        elif use_pool in ("False", "false", "f", "F"):
+            use_pool = False
+    configuration_dict["use_pool"] = use_pool
     show_console_in_status_window()
 
-    configuration_dict["user_enabled_default"] = my_numb_input(
-        var_dict["main_window"], screen_dims[0]/6 + 10,
-        screen_dims[1]/2 - len(user_enabled_default_prompt)/2,
-        user_enabled_default_prompt)
+    use_auth_pool = my_raw_input(
+        var_dict["main_window"], screen_dims[0] / 6 + 16,
+        screen_dims[1] / 2 - len(use_auth_pool_prompt) / 2,
+        use_auth_pool_prompt)
+    if use_auth_pool in ("True", "t", "T", "true"):
+        use_auth_pool = True
+    elif use_auth_pool in ("False", "false", "f", "F"):
+        use_auth_pool = False
+    while use_auth_pool not in (True, False):
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 17, screen_dims[
+            1] / 2 - len(use_auth_pool_prompt) / 2,
+                                       "                                 ")
+        use_auth_pool = my_raw_input(
+            var_dict["main_window"], screen_dims[0] / 6 + 16,
+            screen_dims[1] / 2 - len(use_auth_pool_prompt) / 2,
+            use_auth_pool_prompt)
+        if use_auth_pool in ("True", "t", "T", "true"):
+            use_auth_pool = True
+        elif use_auth_pool in ("False", "false", "f", "F"):
+            use_auth_pool = False
+    configuration_dict["use_auth_pool"] = use_auth_pool
     show_console_in_status_window()
 
     menu_color[12] = curses.color_pair(7)
