@@ -4,6 +4,7 @@ import subprocess
 import socket
 import sys
 import logging
+from collections import OrderedDict
 
 import ldap3
 import yaml
@@ -474,7 +475,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
                                         id_attribute], 3)
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
-                       attributes=[id_attribute, name_attribute]) is True and \
+                       attributes=[ldap3.ALL_ATTRIBUTES]) is True and \
                 conn.entries:
             if len(conn.entries) > 1:
                 LOG.warning("Duplicate entries found for: " + name)
@@ -492,16 +493,38 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
     return {'exit_status': 0, 'entry': None, 'error': sys.exc_info()}
 
 
-def str_presenter(dumper, data):
-  if len(data.splitlines()) > 1:
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-  return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+def _ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
+    class OrderedDumper(Dumper):
+        pass
+
+    def _dict_representer(dumper, data):
+        return dumper.represent_mapping(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+            data.items())
+
+    def _str_presenter(dumper, data):
+        if len(data.splitlines()) > 1:
+            return dumper.represent_scalar('tag:yaml.org,2002:str', data,
+                                           style='|')
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+    OrderedDumper.add_representer(OrderedDict, _dict_representer)
+    OrderedDumper.add_representer(str, _str_presenter)
+    return yaml.dump(data, stream, OrderedDumper, **kwds)
+
+
+# def _dict_to_ordered(data):
+#     order = []
+#     od =
 
 
 def save_config(data, path):
     """
     Saves the passed in dictionary data to the specified file
     """
+    if path is None:
+        return _ordered_dump(data, path, Dumper=yaml.SafeDumper,
+                             default_flow_style=False)
     LOG.info("Saving configuration options to file.")
     try:
         fil = open(path, 'w')
@@ -511,13 +534,21 @@ def save_config(data, path):
         return {'exit_status': 0, 'message': "Unable to open file specified"}
     LOG.debug("Dumping configuration options: " + str(data) + " to file: " +
               path)
-    yaml.add_representer(str, str_presenter)
-    dict = {'keystone_domainldap_conf': {'cert_settings': {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears here\n-----END CERTIFICATE-----"""},
-                                         'domain_settings': {'name': 'ad', 'description': "Dedicated domain for ad users"},
-                                         'conf_settings':{'identity': {'driver': "ldap"}},
-                                         'ldap': data,
-                                         'tls_req_cert': "demand"}}
-    yaml.dump(dict, fil, default_flow_style=False)
+
+    # ordered_data = _dict_to_ordered(data)
+    cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears\
+                  here\n-----END CERTIFICATE-----"""}
+    dmn_dict = OrderedDict([('name', "ad"),
+                            ('description', "Dedicated domain for ad users")])
+    conf_dict = OrderedDict([('identity',
+                OrderedDict([('driver', "ldap")])), ('ldap', data)])
+    od = OrderedDict([('keystone_domainldap_conf',
+            OrderedDict([('cert_settings', cert_dict),
+                         ('domain_settings', dmn_dict),
+                         ('conf_settings', conf_dict)]))])
+    LOG.info(str(od))
+    # yaml.dump(dict, fil, default_flow_style=False)
+    _ordered_dump(od, fil, Dumper=yaml.SafeDumper, default_flow_style=False)
     fil.close()
     return {'exit_status': 1, 'message': "Data successfully dumped"}
 

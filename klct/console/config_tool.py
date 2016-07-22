@@ -6,6 +6,8 @@ import time
 import sys
 import yaml
 import logging
+from collections import OrderedDict
+
 import klct.ldap.ldap_service as conn_service
 from klct.log import logger
 reload(sys)
@@ -68,8 +70,7 @@ menu_options = ["1. Enter/Validate LDAP Server IP",
                 "12. Get Specific Group",
                 "13. Add Additional Configuration Options",
                 "14. Save/Create Configuration File"]
-configuration_dict = {
-               }
+configuration_dict = OrderedDict()
 
 var_dict = {"conn_info": "none",
             "object_class": "none",
@@ -565,12 +566,13 @@ def show_console_in_status_window():
                                           curses.A_BOLD | curses.A_UNDERLINE)
     if bool(configuration_dict):
         global timestamp_string
-        LOG.info("timestamp: " + timestamp_string)
         tmpfile = "temp_conf_" + timestamp_string + ".yaml"
         conn_service.save_config(configuration_dict, tmpfile)
-        configuration_dict_yaml_str = yaml.dump(configuration_dict,
-                                                stream=None,
-                                                default_flow_style=False)
+        configuration_dict_yaml_str = \
+            conn_service.save_config(configuration_dict, None)
+        # configuration_dict_yaml_str = yaml.dump(configuration_dict,
+        #                                         stream=None,
+        #                                         default_flow_style=False)
         var_dict["status_window_text"].addstr(1, 0,
                                               configuration_dict_yaml_str)
     var_dict["status_window"].refresh()
