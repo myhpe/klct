@@ -309,6 +309,8 @@ def my_numb_input(screen, y, x, prompt_string, limit=None, default=None):
     numb_input = numb_input.strip()
     if numb_input == "":
         screen.addstr(y+1, x+1, str(default))
+        curses.noecho()
+        curses.curs_set(False)
         return default
     while not numb_input.isdigit():
         screen.addstr(y, x,
