@@ -1439,8 +1439,8 @@ def menu_additional_config_options():
 
     use_tls_prompt = "What is use_tls? (True/False) Default: True"
 
-    user_enabled_attribute_prompt = \
-        "What is user_enabled_attribute? (e.g. userAccountControl)"
+    tls_req_cert_prompt = \
+        "What is tls_req_cert? (demand/never/allow) Default: demand"
 
     user_enabled_mask_prompt = "What is user_enabled_mask? (e.g. 2)"
 
@@ -1449,13 +1449,28 @@ def menu_additional_config_options():
     use_tls_string = my_raw_input(
         var_dict["main_window"], screen_dims[0]/6 + 4,
         screen_dims[1]/2 - len(use_tls_prompt)/2, use_tls_prompt, "True")
+    while use_tls_string not in ("True", "False"):
+        var_dict["main_window"].addstr(screen_dims[0]/6 + 5, screen_dims[
+            1]/2 - len(use_tls_prompt)/2, "                                  ")
+        use_tls_string = my_raw_input(
+            var_dict["main_window"], screen_dims[0] / 6 + 4,
+            screen_dims[1] / 2 - len(use_tls_prompt) / 2, use_tls_prompt,
+            "True")
     configuration_dict["use_tls"] = use_tls_string
     show_console_in_status_window()
 
-    configuration_dict["user_enabled_attribute"] = my_raw_input(
+    tls_req_cert = my_raw_input(
         var_dict["main_window"], screen_dims[0] / 6 + 6,
-        screen_dims[1] / 2 - len(user_enabled_attribute_prompt) / 2,
-        user_enabled_attribute_prompt)
+        screen_dims[1] / 2 - len(tls_req_cert_prompt) / 2,
+        tls_req_cert_prompt, "demand")
+    while tls_req_cert not in ("demand", "allow", "never"):
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 7, screen_dims[
+            1]/2 - len(use_tls_prompt)/2, "                                  ")
+        tls_req_cert = my_raw_input(
+            var_dict["main_window"], screen_dims[0] / 6 + 6,
+            screen_dims[1] / 2 - len(tls_req_cert_prompt) / 2,
+            tls_req_cert_prompt, "demand")
+    configuration_dict["tls_req_cert"] = tls_req_cert
     show_console_in_status_window()
 
     configuration_dict["user_enabled_mask"] = my_numb_input(
