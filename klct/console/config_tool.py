@@ -7,13 +7,10 @@ import sys
 import yaml
 import logging
 from collections import OrderedDict
-
 import klct.ldap.ldap_service as conn_service
 from klct.log import logger
 reload(sys)
 sys.setdefaultencoding('utf8')
-# sys.path.insert(0, '../ldap')
-# import configTool
 LOG = logging.getLogger(__name__)
 
 
@@ -449,7 +446,7 @@ def adv_ldap_setup_prompts(screen, max_yx):
 def adv_ldap_success(screen, conn_info, max_yx, user_name,
                      pass_word, port_numb, tls_cert_path=0):
     var_dict["conn_info"] = conn_info
-    if var_dict["port_added"] == False:
+    if not var_dict["port_added"]:
         configuration_dict["url"] = configuration_dict["url"] + ":" + \
             str(port_numb)
         var_dict["port_added"] = True
