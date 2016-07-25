@@ -62,11 +62,11 @@ menu_options = ["1. Enter/Validate LDAP Server IP",
                 "4. Check LDAP Suffix",
                 "5. Input User ID Attribute/User Name Attribute",
                 "6. Show List of User-Related ObjectClasses",
-                "7. Check User Tree DN and Show List of Users",
+                "7. Show List of Users",
                 "8. Get a Specific User",
                 "9. Input Group ID Attribute/Group Name Attribute",
                 "10. Show List of Group Related ObjectClasses",
-                "11. Check Group Tree DN and Show List of Groups",
+                "11. Show List of Groups",
                 "12. Get Specific Group",
                 "13. Add Additional Configuration Options",
                 "14. Save/Create Configuration File"]
@@ -1060,7 +1060,7 @@ def check_user_config_dict(screen_dims):
 def menu_check_user_tree_dn_show_users():
     screen_dims = setup_menu_call(
         var_dict["main_window"],
-        "7. Check User Tree DN and Show List of Users")
+        "7. Show List of Users")
     if check_user_config_dict(screen_dims):
         conn = var_dict["conn_info"]["conn"]
         user_tree_dn = configuration_dict["user_tree_dn"]
@@ -1079,7 +1079,7 @@ def menu_check_user_tree_dn_show_users():
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         LOG.info("Listing Users.")
-        menu_options[6] = u"7. Check User Tree DN and Show List of Users ✓"
+        menu_options[6] = u"7. Show List of Users ✓"
         menu_color[6] = curses.color_pair(7)
         list_of_users = return_values["entries"]
         var_dict["list_of_users"] = list_of_users
@@ -1331,7 +1331,7 @@ def menu_show_list_group_object_classes():
 def menu_check_group_tree_dn_show_groups():
     screen_dims = setup_menu_call(
         var_dict["main_window"],
-        "11. Check Group Tree DN and Show List of Groups")
+        "11. Show List of Groups")
     if check_group_config_dict(screen_dims):
         conn = var_dict["conn_info"]["conn"]
         group_dn = configuration_dict["group_tree_dn"]
@@ -1353,7 +1353,7 @@ def menu_check_group_tree_dn_show_groups():
         return_values = {"exit_status": 0}
     if return_values["exit_status"] == 1:
         LOG.info("Listing groups.")
-        menu_options[10] = u"11. Check Group Tree DN and Show List of Groups ✓"
+        menu_options[10] = u"11. Show List of Groups ✓"
         menu_color[10] = curses.color_pair(7)
         list_of_groups = return_values["entries"]
         var_dict["list_of_groups"] = list_of_groups
