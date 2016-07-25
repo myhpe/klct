@@ -278,7 +278,7 @@ def retrieve_server_info(conn, server):
             ret_vals['type'] = "LDAP Server Type: " + server_type
             return ret_vals
     except AssertionError as err:
-        ret_vals['error'] = err
+        ret_vals['error'] = "Connection is closed."
     except:
         ret_vals['error'] = sys.exc_info()
     LOG.warning(ret_vals['error'])
@@ -320,7 +320,7 @@ def check_ldap_suffix(conn, base_dn):
         else:
             LOG.warning(base_dn + " is an invalid suffix (base DN)")
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
     except:
@@ -371,7 +371,7 @@ def validate_info(conn, dn, id_attribute, name_attribute):
                                            + " are valid"
             return ret_vals
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
     except:
@@ -403,7 +403,7 @@ def list_object_classes(conn, dn, id_attribute):
         else:
             LOG.warning("No object classes found")
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'objectclasses': None, 'error': err}
     except:
         LOG.warning(sys.exc_info())
@@ -424,7 +424,7 @@ def validate_object_class(conn, dn, objectclass):
                                                                "objectclass",
                     'error': None}
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'message': "Connection is closed",
                 'error': err}
     except:
@@ -434,7 +434,7 @@ def validate_object_class(conn, dn, objectclass):
             'error': sys.exc_info()}
 
 
-def list_entries(conn, dn, id_attribute, objectclass, limit):
+def list_entries(conn, dn, id_attribute, name_attribute, objectclass, limit):
     """
     Lists the entries, up to the limit.
     """
@@ -449,14 +449,14 @@ def list_entries(conn, dn, id_attribute, objectclass, limit):
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_scope=ldap3.LEVEL,
                        search_filter=search_filter,
-                       attributes=[id_attribute],
+                       attributes=[name_attribute],
                        size_limit=limit) is True and conn.entries:
             LOG.debug("Found list of entries: " + str(conn.entries))
             return {'exit_status': 1, 'entries': conn.entries}
         else:
             LOG.warning("No entries found")
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'entries': None, 'error': err}
     except:
         LOG.warning(sys.exc_info())
@@ -486,7 +486,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
         else:
             LOG.warning("Entry: " + name + " not found")
     except AssertionError as err:
-        LOG.warning(err)
+        LOG.warning("Connection is closed.")
         return {'exit_status': 0, 'entry': None, 'error': err}
     except:
         LOG.warning(sys.exc_info())
