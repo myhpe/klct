@@ -1065,6 +1065,7 @@ def menu_check_user_tree_dn_show_users():
         conn = var_dict["conn_info"]["conn"]
         user_tree_dn = configuration_dict["user_tree_dn"]
         user_id_attribute = configuration_dict["user_id_attribute"]
+        user_name_attribute = configuration_dict["user_name_attribute"]
         object_class = configuration_dict["user_object_class"]
         maximum = screen_dims[0] - screen_dims[0]/6 - 7
         limit_prompt = "How many users would you like to see? Maximum: {" \
@@ -1074,6 +1075,7 @@ def menu_check_user_tree_dn_show_users():
         limit = min(maximum, limit)
         return_values = conn_service.list_entries(conn, user_tree_dn,
                                                   user_id_attribute,
+                                                  user_name_attribute,
                                                   object_class, limit)
     else:
         return_values = {"exit_status": 0}
@@ -1336,6 +1338,7 @@ def menu_check_group_tree_dn_show_groups():
         conn = var_dict["conn_info"]["conn"]
         group_dn = configuration_dict["group_tree_dn"]
         group_id_attribute = configuration_dict["group_id_attribute"]
+        group_name_attribute = configuration_dict["group_name_attribute"]
         object_class = configuration_dict["group_object_class"]
         maximum = screen_dims[0] - screen_dims[0]/6 - 7
         limit_prompt = "How many groups would you like to see? Maximum: {" \
@@ -1348,6 +1351,7 @@ def menu_check_group_tree_dn_show_groups():
         return_values = conn_service.list_entries(conn,
                                                   group_dn,
                                                   group_id_attribute,
+                                                  group_name_attribute,
                                                   object_class, limit)
     else:
         return_values = {"exit_status": 0}
