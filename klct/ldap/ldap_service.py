@@ -475,7 +475,7 @@ def get_entry(conn, dn, id_attribute, objectclass, name_attribute, name):
                                         id_attribute], 3)
         LOG.debug("Created search filter: " + search_filter)
         if conn.search(search_base=dn, search_filter=search_filter,
-                       attributes=[ldap3.ALL_ATTRIBUTES]) is True and \
+                       attributes=[id_attribute, name_attribute]) is True and \
                 conn.entries:
             if len(conn.entries) > 1:
                 LOG.warning("Duplicate entries found for: " + name)
@@ -518,7 +518,7 @@ def _ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
 #     od =
 
 
-def save_config(data, path):
+def save_config(data, path, name="ad"):
     """
     Saves the passed in dictionary data to the specified file
     """
@@ -535,19 +535,29 @@ def save_config(data, path):
     LOG.debug("Dumping configuration options: " + str(data) + " to file: " +
               path)
 
-    # ordered_data = _dict_to_ordered(data)
-    cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears\
-                  here\n-----END CERTIFICATE-----"""}
-    dmn_dict = OrderedDict([('name', "ad"),
-                            ('description', "Dedicated domain for ad users")])
+    if 'tls_cacertfile' in data:
+        cert_path = data['tls_cacertfile']
+        try:
+            cert_fil = open(cert_path, 'r')
+            cert = cert_fil.read()
+        except:
+            message = "Unable to open ca cert file: " + str(cert_path) + \
+                      " for reading"
+            LOG.debug(message)
+            return {'exit_status': 0, 'message': message}
+
+        cert_dict = {'cacert': cert}
+    else:
+        cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears here\n-----END CERTIFICATE-----"""}
+    dmn_dict = OrderedDict([('name', name),
+                            ('description', "Dedicated domain for " + name +
+                             " users")])
     conf_dict = OrderedDict([('identity',
                 OrderedDict([('driver', "ldap")])), ('ldap', data)])
     od = OrderedDict([('keystone_domainldap_conf',
             OrderedDict([('cert_settings', cert_dict),
                          ('domain_settings', dmn_dict),
                          ('conf_settings', conf_dict)]))])
-    LOG.info(str(od))
-    # yaml.dump(dict, fil, default_flow_style=False)
     _ordered_dump(od, fil, Dumper=yaml.SafeDumper, default_flow_style=False)
     fil.close()
     return {'exit_status': 1, 'message': "Data successfully dumped"}
