@@ -1442,48 +1442,32 @@ def menu_additional_config_options():
     use_auth_pool_prompt = "What is use_auth_pool? (True/False) Default: True"
 
     if "tls_cacertfile" in configuration_dict:
-        use_tls_string = my_raw_input(
-            var_dict["main_window"], screen_dims[0]/6 + 4,
-            screen_dims[1]/2 - len(use_tls_prompt)/2, use_tls_prompt, True)
-        if use_tls_string in ("True", "t", "T", "true"):
-            use_tls_string = True
-        elif use_tls_string in ("False", "false", "f", "F"):
-            use_tls_string = False
-        while use_tls_string not in (True, False):
-            var_dict["main_window"].addstr(screen_dims[0]/6 + 5, screen_dims[
-                1]/2 - len(use_tls_prompt)/2,
-                                           "                                 ")
-            use_tls_string = my_raw_input(
-                var_dict["main_window"], screen_dims[0] / 6 + 4,
-                screen_dims[1] / 2 - len(use_tls_prompt) / 2, use_tls_prompt,
-                "True")
-            if use_tls_string in ("True", "t", "T", "true"):
-                use_tls_string = True
-            elif use_tls_string in ("False", "false", "f", "F"):
-                use_tls_string = False
+        use_tls_prompt = "What is use_tls? (True/False) Default: True"
+        default_use_tls = True
     else:
         use_tls_prompt = "What is use_tls? (True/False) Default: False"
+        default_use_tls = False
+
+    use_tls_string = my_raw_input(
+        var_dict["main_window"], screen_dims[0] / 6 + 4,
+        screen_dims[1] / 2 - len(use_tls_prompt) / 2,
+        use_tls_prompt, default_use_tls)
+    if use_tls_string in ("True", "t", "T", "true"):
+        use_tls_string = True
+    elif use_tls_string in ("False", "false", "f", "F"):
+        use_tls_string = False
+    while use_tls_string not in (True, False):
+        var_dict["main_window"].addstr(screen_dims[0] / 6 + 5, screen_dims[
+            1] / 2 - len(use_tls_prompt) / 2,
+                                       "                                 ")
         use_tls_string = my_raw_input(
             var_dict["main_window"], screen_dims[0] / 6 + 4,
             screen_dims[1] / 2 - len(use_tls_prompt) / 2, use_tls_prompt,
-            False)
+            default_use_tls)
         if use_tls_string in ("True", "t", "T", "true"):
             use_tls_string = True
         elif use_tls_string in ("False", "false", "f", "F"):
             use_tls_string = False
-        while use_tls_string not in (True, False):
-            var_dict["main_window"].addstr(screen_dims[0] / 6 + 5, screen_dims[
-                1] / 2 - len(use_tls_prompt) / 2,
-                                           "                                 ")
-            use_tls_string = my_raw_input(
-                var_dict["main_window"], screen_dims[0] / 6 + 4,
-                screen_dims[1] / 2 - len(use_tls_prompt) / 2,
-                use_tls_prompt,
-                False)
-            if use_tls_string in ("True", "t", "T", "true"):
-                use_tls_string = True
-            elif use_tls_string in ("False", "false", "f", "F"):
-                use_tls_string = False
     configuration_dict["use_tls"] = use_tls_string
     show_console_in_status_window()
 
