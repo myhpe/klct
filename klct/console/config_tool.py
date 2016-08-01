@@ -1477,9 +1477,13 @@ def menu_create_config():
                                   "14. Save/Create Configuration File")
     data = configuration_dict
     string_prompt = "Please specify a file name."
+    name_prompt = "Please speficy a domain name."
+    name = my_raw_input(var_dict["main_window"], screen_dims[0] / 2 - 2,
+                        screen_dims[1] / 2 - len(name_prompt) / 2,
+                        name_prompt)
     path = my_raw_input(var_dict["main_window"], screen_dims[0]/2,
                         screen_dims[1]/2 - len(string_prompt)/2, string_prompt)
-    return_values = conn_service.save_config(data, path)
+    return_values = conn_service.save_config(data, path, name)
     if return_values["exit_status"] == 1:
         menu_options[13] = u"14. Save/Create Configuration File ✓"
         menu_color[13] = curses.color_pair(7)
