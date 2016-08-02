@@ -1236,8 +1236,8 @@ def menu_show_list_group_object_classes():
         num_obj_classes = len(object_classes_list)
         choice = my_numb_input(
             var_dict["main_window"],
-            int(screen_dims[0] / 6) + num_obj_classes + 5, int(screen_dims[1] /
-                                                           2) - 15,
+            int(screen_dims[0] / 6) + num_obj_classes + 5,
+            int(screen_dims[1] / 2) - 15,
             "Please choose one of the above.", num_obj_classes)
         if choice == num_obj_classes:
             group_obj_class = my_raw_input(
@@ -1389,8 +1389,6 @@ def menu_additional_config_options():
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "13. Add Additional Configuration Options")
 
-    use_tls_prompt = "What is use_tls? (True/False) Default: True"
-
     tls_req_cert_prompt = \
         "What is tls_req_cert? (demand/never/allow) Default: demand"
 
@@ -1402,10 +1400,10 @@ def menu_additional_config_options():
 
     if "tls_cacertfile" in configuration_dict:
         use_tls_prompt = "What is use_tls? (True/False) Default: True"
-        default_use_tls = True
+        default_use_tls = "True"
     else:
         use_tls_prompt = "What is use_tls? (True/False) Default: False"
-        default_use_tls = False
+        default_use_tls = "False"
 
     use_tls_string = my_raw_input(
         var_dict["main_window"], int(screen_dims[0] / 6) + 4,
@@ -1417,8 +1415,8 @@ def menu_additional_config_options():
         use_tls_string = False
     while use_tls_string not in (True, False):
         var_dict["main_window"].addstr(int(screen_dims[0] / 6) + 5,
-                                       int(screen_dims[
-            1] / 2) - int(len(use_tls_prompt) / 2),
+                                       int(screen_dims[1] / 2) -
+                                       int(len(use_tls_prompt) / 2),
                                        "                                 ")
         use_tls_string = my_raw_input(
             var_dict["main_window"], int(screen_dims[0] / 6) + 4,
@@ -1438,8 +1436,8 @@ def menu_additional_config_options():
         tls_req_cert_prompt, "demand")
     while tls_req_cert not in ("demand", "allow", "never"):
         var_dict["main_window"].addstr(int(screen_dims[0] / 6) + 9,
-                                       int(screen_dims[
-            1]/2) - int(len(tls_req_cert_prompt)/2),
+                                       int(screen_dims[1]/2) -
+                                       int(len(tls_req_cert_prompt)/2),
                                        "                                  ")
         tls_req_cert = my_raw_input(
             var_dict["main_window"], int(screen_dims[0] / 6) + 8,
@@ -1482,8 +1480,8 @@ def menu_additional_config_options():
         use_auth_pool = False
     while use_auth_pool not in (True, False):
         var_dict["main_window"].addstr(int(screen_dims[0] / 6) + 17,
-                                       int(screen_dims[
-            1] / 2) - int(len(use_auth_pool_prompt) / 2),
+                                       int(screen_dims[1] / 2) -
+                                       int(len(use_auth_pool_prompt) / 2),
                                        "                                 ")
         use_auth_pool = my_raw_input(
             var_dict["main_window"], int(screen_dims[0] / 6) + 16,
