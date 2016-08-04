@@ -16,8 +16,25 @@ else:
     reload(sys)
     sys.setdefaultencoding('utf8')
 
+menu_options = ["1. Enter/Validate LDAP Server IP",
+                "2. Check Connection to LDAP Server",
+                "3. Get Server Information",
+                "4. Check LDAP Suffix",
+                "5. Input User ID Attribute/User Name Attribute",
+                "6. Show List of User-Related ObjectClasses",
+                "7. Show List of Users",
+                "8. Get a Specific User",
+                "9. Input Group ID Attribute/Group Name Attribute",
+                "10. Show List of Group Related ObjectClasses",
+                "11. Show List of Groups",
+                "12. Get Specific Group",
+                "13. Add Additional Configuration Options",
+                "14. Save/Create Configuration File"]
 
-def klct_curses_setup():
+
+def klct_curses_setup(stdscr):
+    stdscr.keypad(True)
+    stdscr.scrollok(True)
     curses.noecho()
     if curses.has_colors():  # enable coloring
         curses.start_color()
@@ -29,6 +46,8 @@ def klct_curses_setup():
     curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
     curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
     curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_WHITE)
+    stdscr.bkgd(curses.color_pair(1))
+    return stdscr.getmaxyx()
 
 
 def resize_windows():
@@ -1677,64 +1696,33 @@ def display_menu():
 if __name__ == '__main__':
     LOG = logging.getLogger(__name__)
     timestamp_string = str(time.strftime('%B_%d_%Y_%X'))
-    """SET UP"""
     LOG.info("Setting up standard screen.")
     locale.setlocale(locale.LC_ALL, "")  # for unicode support
     stdscr = curses.initscr()  # terminal screen
-    stdscr_dimensions = stdscr.getmaxyx()
-    stdscr.keypad(True)
-    stdscr.scrollok(True)
-    LOG.info("Setting up Title screen.")
-    klct_curses_setup()
-    stdscr.bkgd(curses.color_pair(1))
+    stdscr_dimensions = klct_curses_setup(stdscr)
+    menu_color = [curses.color_pair(2)] * len(menu_options)
     LOG.info("Setting up status window.")
     status_window = stdscr.subwin(stdscr_dimensions[0] - 2,
                                   int(stdscr_dimensions[1] / 3) - 2, 1,
-                                  stdscr_dimensions[1] - int(stdscr_dimensions[
-                                      1] / 3))
+                                  stdscr_dimensions[1] -
+                                  int(stdscr_dimensions[1] / 3))
     status_window.scrollok(True)
     status_window_text = stdscr.subwin(stdscr_dimensions[0] - 3,
                                        int(stdscr_dimensions[1] / 3) - 4, 2,
                                        stdscr_dimensions[1] -
                                        int(stdscr_dimensions[1] / 3) + 1)
-    status_window_text.scrollok(True)
     LOG.info("Setting up main screen")
     main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
                                 stdscr_dimensions[1] -
                                 int(stdscr_dimensions[1] / 3) - 1, 1, 1)
     main_window.keypad(True)
-    main_window.scrollok(True)
-    menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
-    menu_options = ["1. Enter/Validate LDAP Server IP",
-                    "2. Check Connection to LDAP Server",
-                    "3. Get Server Information",
-                    "4. Check LDAP Suffix",
-                    "5. Input User ID Attribute/User Name Attribute",
-                    "6. Show List of User-Related ObjectClasses",
-                    "7. Show List of Users",
-                    "8. Get a Specific User",
-                    "9. Input Group ID Attribute/Group Name Attribute",
-                    "10. Show List of Group Related ObjectClasses",
-                    "11. Show List of Groups",
-                    "12. Get Specific Group",
-                    "13. Add Additional Configuration Options",
-                    "14. Save/Create Configuration File"]
-    configuration_dict = OrderedDict()
-
     var_dict = {"conn_info": "none",
                 "object_class": "none",
                 "status_window": status_window,
                 "status_window_text": status_window_text,
                 "main_window": main_window,
                 "port_added": False}
-
+    configuration_dict = OrderedDict()
     curses.wrapper(show_instructions)
     curses.endwin()
 
-
-class MenuItem(object):
-    __metaclass__ = ABCMeta
-
-    @abstract
-    def menu_action(self):
-        pass
