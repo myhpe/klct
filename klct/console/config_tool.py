@@ -16,8 +16,38 @@ else:
     reload(sys)
     sys.setdefaultencoding('utf8')
 
+menu_options = ["1. Enter/Validate LDAP Server IP",
+                "2. Check Connection to LDAP Server",
+                "3. Get Server Information",
+                "4. Check LDAP Suffix",
+                "5. Input User ID Attribute/User Name Attribute",
+                "6. Show List of User-Related ObjectClasses",
+                "7. Show List of Users",
+                "8. Get a Specific User",
+                "9. Input Group ID Attribute/Group Name Attribute",
+                "10. Show List of Group Related ObjectClasses",
+                "11. Show List of Groups",
+                "12. Get Specific Group",
+                "13. Add Additional Configuration Options",
+                "14. Save/Create Configuration File"]
 
-"""HELPER METHODS"""
+
+def klct_curses_setup(stdscr):
+    stdscr.keypad(True)
+    stdscr.scrollok(True)
+    curses.noecho()
+    if curses.has_colors():  # enable coloring
+        curses.start_color()
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
+    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
+    curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
+    curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_WHITE)
+    stdscr.bkgd(curses.color_pair(1))
+    return stdscr.getmaxyx()
 
 
 def resize_windows():
@@ -498,9 +528,6 @@ def prompt_base_dn(screen):
         menu_check_ldap_suffix()
 
 
-"""MENU METHODS"""
-
-
 def show_console_in_status_window():
     LOG.info("Updating console window.")
     var_dict["status_window"].clear()
@@ -527,8 +554,8 @@ def menu_ping_ldap_ip():
     screen_dims = setup_menu_call(var_dict["main_window"],
                                   "1. Enter/Validate LDAP Server IP")
     prompt_ip_string = "Please Enter the IP Address of the LDAP server."
-    ip_string = my_raw_input(var_dict["main_window"], int(screen_dims[0] /
-                                                          6) + 4,
+    ip_string = my_raw_input(var_dict["main_window"],
+                             int(screen_dims[0] / 6) + 4,
                              int(screen_dims[1] / 2) - int(len(
                                  prompt_ip_string)/2),
                              prompt_ip_string)
@@ -1556,7 +1583,7 @@ def display_menu():
     menu_selection = -1
     option_num = 0
     while menu_selection < 0:
-        menu_highlighting = [0] * 15  # number of menu options
+        menu_highlighting = [0] * (len(menu_options) + 1)
         menu_highlighting[option_num] = curses.A_STANDOUT
         screen.addstr(screen_half_y - 9, screen_half_x - 11,
                       "LDAP Configuration Menu", curses.A_UNDERLINE |
@@ -1625,9 +1652,9 @@ def display_menu():
             status_window.refresh()
             status_window_text.refresh()
         elif key_press == curses.KEY_UP:
-            option_num = (option_num - 1) % 15
+            option_num = (option_num - 1) % (len(menu_options) + 1)
         elif key_press == curses.KEY_DOWN:
-            option_num = (option_num + 1) % 15
+            option_num = (option_num + 1) % (len(menu_options) + 1)
         elif key_press == ord('\n'):
             menu_selection = option_num
             if option_num == 0:
@@ -1668,71 +1695,34 @@ def display_menu():
 
 if __name__ == '__main__':
     LOG = logging.getLogger(__name__)
-
     timestamp_string = str(time.strftime('%B_%d_%Y_%X'))
-    """SET UP"""
     LOG.info("Setting up standard screen.")
     locale.setlocale(locale.LC_ALL, "")  # for unicode support
     stdscr = curses.initscr()  # terminal screen
-    stdscr_dimensions = stdscr.getmaxyx()
-    stdscr.keypad(True)
-    stdscr.scrollok(True)
-    curses.noecho()
-    LOG.info("Setting up Title screen.")
-    if curses.has_colors():  # enable coloring
-        curses.start_color()
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_WHITE)
-    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
-    curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_WHITE)
-    curses.init_pair(6, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(7, curses.COLOR_GREEN, curses.COLOR_WHITE)
-    curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_WHITE)
-    stdscr.bkgd(curses.color_pair(1))
+    stdscr_dimensions = klct_curses_setup(stdscr)
+    menu_color = [curses.color_pair(2)] * len(menu_options)
     LOG.info("Setting up status window.")
     status_window = stdscr.subwin(stdscr_dimensions[0] - 2,
                                   int(stdscr_dimensions[1] / 3) - 2, 1,
-                                  stdscr_dimensions[1] - int(stdscr_dimensions[
-                                      1] / 3))
+                                  stdscr_dimensions[1] -
+                                  int(stdscr_dimensions[1] / 3))
     status_window.scrollok(True)
     status_window_text = stdscr.subwin(stdscr_dimensions[0] - 3,
                                        int(stdscr_dimensions[1] / 3) - 4, 2,
                                        stdscr_dimensions[1] -
-                                       int(stdscr_dimensions[
-                                           1] / 3) + 1)
-    status_window_text.scrollok(True)
+                                       int(stdscr_dimensions[1] / 3) + 1)
     LOG.info("Setting up main screen")
     main_window = stdscr.subwin(stdscr_dimensions[0] - 2,
-                                stdscr_dimensions[1] - int(stdscr_dimensions[
-                                    1] / 3) - 1
-                                , 1, 1)
+                                stdscr_dimensions[1] -
+                                int(stdscr_dimensions[1] / 3) - 1, 1, 1)
     main_window.keypad(True)
-    main_window.scrollok(True)
-    """VARS THAT MIGHT CHANGE DURING EXECUTION OF PROGRAM"""
-    menu_color = [curses.color_pair(2)] * 14  # number of menu options = 12
-    menu_options = ["1. Enter/Validate LDAP Server IP",
-                    "2. Check Connection to LDAP Server",
-                    "3. Get Server Information",
-                    "4. Check LDAP Suffix",
-                    "5. Input User ID Attribute/User Name Attribute",
-                    "6. Show List of User-Related ObjectClasses",
-                    "7. Show List of Users",
-                    "8. Get a Specific User",
-                    "9. Input Group ID Attribute/Group Name Attribute",
-                    "10. Show List of Group Related ObjectClasses",
-                    "11. Show List of Groups",
-                    "12. Get Specific Group",
-                    "13. Add Additional Configuration Options",
-                    "14. Save/Create Configuration File"]
-    configuration_dict = OrderedDict()
-
     var_dict = {"conn_info": "none",
                 "object_class": "none",
                 "status_window": status_window,
                 "status_window_text": status_window_text,
                 "main_window": main_window,
                 "port_added": False}
-
+    configuration_dict = OrderedDict()
     curses.wrapper(show_instructions)
     curses.endwin()
+
