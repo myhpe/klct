@@ -69,32 +69,29 @@ class NetworkValidator(object):
         Checks if the given hostName is valid, and pings it.
         """
         LOG.info("Initializing ping sequence to {}".format(host_name))
-        # ret_vals = {'exit_status': 0, 'host_name': host_name, 'message': None}
         new_host_name = ""
         try:
             new_host_name = socket.gethostbyname(host_name)
-            LOG.debug("Converted {} to an ip: {}".format(host_name, new_host_name))
+            LOG.debug("Converted {} to an ip: {}".format(host_name,
+                                                         new_host_name))
         except socket.gaierror:
             LOG.debug("Unable to convert {}".format(host_name))
             pass
 
         is_valid = self._check_valid_ip(new_host_name)
         if not is_valid or host_name == "":
-            # ret_vals['message'] = "{} is an invalid host name".format(host_name)
-            # return ret_vals
-            raise LDAPNetworkException("{} is an invalid host name".format(host_name))
+            message = "{} is an invalid host name".format(host_name)
+            raise LDAPNetworkException(message)
 
         with open(os.devnull, "w"):
             try:
-                subprocess.check_output(["ping", "-c", "1", host_name], stderr=subprocess.STDOUT, universal_newlines=True)
+                subprocess.check_output(["ping", "-c", "1", host_name],
+                                        stderr=subprocess.STDOUT,
+                                        universal_newlines=True)
                 LOG.debug("Successfully pinged {}".format(host_name))
-                # ret_vals['exit_status'] = 1
-                # ret_vals['message'] = "Successfully pinged {}".format(host_name)
             except subprocess.CalledProcessError:
                 message = "Unsuccessfully pinged {}".format(host_name)
                 LOG.warning(message)
-                # ret_vals['exit_status'] = 0
-                # ret_vals['message'] = "Unsuccessfully pinged {}".format(host_name)
                 raise LDAPNetworkException(message)
 
         if host_name == new_host_name:
@@ -108,7 +105,8 @@ class LDAPConnection(object):
         self.conn = None
         self.server = None
 
-    def connect_ldap_server(self, host_name, port_number=None, user_name=None, password=None, want_tls='n', tls_cert_path=None):
+    def connect_ldap_server(self, host_name, port_number=None, user_name=None,
+                            password=None, want_tls='n', tls_cert_path=None):
         """
         Attempts to connect to the provided hostName and port number, default
         port is 389 if none provided, using the provided user name and pass.
@@ -117,35 +115,50 @@ class LDAPConnection(object):
         """
         LOG.info("Initializing connection to {}".format(host_name))
         if port_number is None and want_tls == 'n':
-            LOG.debug("tls conection not required, setting default port to 389")
+            LOG.debug("tls not requested, setting default port to 389")
             port_number = 389
         elif port_number is None and want_tls == 'y':
-            LOG.debug("tls conection not required, setting default port to 636")
+            LOG.debug("tls requested, setting default port to 636")
             port_number = 636
         try:
-            LOG.debug("Attempting to create server object with port: {}, username: {}, password: {}, tls_requested: {}, certificate path: {}".format(str(port_number), str(user_name), str(password), want_tls, str(tls_cert_path)))
+            LOG.debug("Attempting to create server object with port: {}, "
+                      "username: {}, password: {}, tls_requested: {}, "
+                      "certificate path: {}".format(
+                str(port_number), str(user_name), str(password),
+                want_tls, str(tls_cert_path)))
             if want_tls == 'n':
                 self.server = Server(host_name, port=port_number, get_info=ALL)
             else:
-                LOG.debug("Attempting to create tls object with certificate file: {}".format(tls_cert_path))
+                LOG.debug("Attempting to create tls object with "
+                          "certificate file: {}".format(tls_cert_path))
                 try:
-                    subprocess.check_output(["openssl", "x509", "-checkend", "120", "-noout", "-in", tls_cert_path], stderr=subprocess.STDOUT, universal_newlines=True)
+                    subprocess.check_output(["openssl", "x509",
+                                             "-checkend", "120", "-noout",
+                                             "-in", tls_cert_path],
+                                            stderr=subprocess.STDOUT,
+                                            universal_newlines=True)
                     LOG.debug("Tls certificate is not expired")
                 except subprocess.CalledProcessError:
-                    message = "Tls certificate has expired or will expire within the next 2 minutes"
+                    message = "Tls certificate has expired " \
+                              "or will expire within the next 2 minutes"
                     LOG.warning(message)
                     raise LDAPCertException(message)
 
-                tls_object = ldap3.Tls(ca_certs_file=tls_cert_path, validate=ssl.CERT_REQUIRED)
-                self.server = Server(host_name, port=port_number, use_ssl=True, tls=tls_object, get_info=ALL)
+                tls_object = ldap3.Tls(ca_certs_file=tls_cert_path,
+                                       validate=ssl.CERT_REQUIRED)
+                self.server = Server(host_name, port=port_number,
+                                     use_ssl=True, tls=tls_object,
+                                     get_info=ALL)
                 LOG.debug("Successfully created tls object")
             LOG.debug("Successfully created server object")
             LOG.debug("Attempting to create connection socket")
-            self.conn = Connection(self.server, user=user_name, password=password)
+            self.conn = Connection(self.server, user=user_name,
+                                   password=password)
             LOG.debug("Successfully created socket")
             LOG.debug("Attempting to bind to socket")
             if not self.conn.bind():
-                message = "Failed to bind to socket (Invalid Log in credentials)"
+                message = "Failed to bind to socket " \
+                          "(Invalid Log in credentials)"
                 LOG.warning(message)
                 raise LDAPSocketBindException(message)
             LOG.debug("Successfully bound to socket")
@@ -157,7 +170,8 @@ class LDAPConnection(object):
             return
         except ldap3.LDAPSocketOpenError:
             if port_number != 636 and want_tls == 'y':
-                message = "Invalid socket: Connecting with TLS may require a different port number."
+                message = "Invalid socket: Connecting with TLS may " \
+                          "require a different port number."
             else:
                 message = "Failed to connect due to invalid socket."
         except ldap3.LDAPInvalidPortError:
@@ -183,9 +197,11 @@ class LDAPService(object):
         if num_attributes is 1:
             filter = "({}=*)".format(attributes[0])
         elif num_attributes is 2:
-            filter = "(&(objectclass={})({}=*))".format(attributes[0], attributes[1])
+            filter = "(&(objectclass={})({}=*))".format(
+                attributes[0], attributes[1])
         elif num_attributes is 3:
-            filter = "(&(&({}={}))(objectclass={})({}=*))".format(attributes[0], attributes[1], attributes[2], attributes[3])
+            filter = "(&(&({}={}))(objectclass={})({}=*))".format(
+                attributes[0], attributes[1], attributes[2], attributes[3])
         LOG.debug("Created search filter: {}".format(filter))
         return filter
 
@@ -215,36 +231,47 @@ class LDAPService(object):
         sys.stdout.close()
 
         sys.stdout = orig_stdout
-        LOG.debug("Dumping server info and server schema to the respective files")
+        LOG.debug("Dumping server info and schema to the respective files")
         LOG.debug("Closing serverinfo and serverschema files")
 
         LOG.debug("Searching for ldap attributes")
-        if self.conn.search('', '(objectclass=*)', ldap3.SEARCH_SCOPE_BASE_OBJECT, attributes=ldap3.ALL_ATTRIBUTES, get_operational_attributes=True) is True and self.conn.entries:
+        if self.conn.search('', '(objectclass=*)',
+                            ldap3.SEARCH_SCOPE_BASE_OBJECT,
+                            attributes=ldap3.ALL_ATTRIBUTES,
+                            get_operational_attributes=True) is True \
+                and self.conn.entries:
             version = ""
             i = 0
             try:
-                version_result = self.conn.response[0]['attributes']['supportedLDAPVersion']
+                version_result = self.conn.response[0]['attributes']
+                ['supportedLDAPVersion']
                 for i in range(len(version_result) - 1):
                     version = "{} {}, ".format(version, str(version_result[i]))
                 if len(version_result) == 1:
                     version = "{} {}".format(version, str(version_result[i]))
                 else:
-                    version = "{} {}".format(version, str(version_result[i + 1]))
+                    version = "{} {}".format(version, str(
+                        version_result[i + 1]))
                 LOG.debug("Found supported ldap versions: {}".format(version))
             except:
                 LOG.warning("Unable to find supported ldap versions")
                 version = "N/A"
             try:
-                server_type = self.conn.response[0]['attributes']['structuralObjectClass']
+                server_type = self.conn.response[0]['attributes']
+                ['structuralObjectClass']
                 LOG.debug("Found ldap server type: {}".format(server_type))
             except:
-                if str(self.server.info).lower().find("microsoft") != -1 and str(self.server.info).lower().find("active directory") != -1:
+                if str(self.server.info).lower().find("microsoft") != -1 \
+                        and str(self.server.info).lower().find(
+                            "active directory") != -1:
                     LOG.debug("Found ldap server type: Active Directory")
                     server_type = "Active Directory"
                 else:
                     LOG.warning("Unable to find ldap server type")
-                    server_type = "No server type found. (This usually means the server type is AD)"
-            return {'version': "Supported LDAP Version: {}".format(version), 'type': "LDAP Server Type: {}".format(server_type)}
+                    server_type = "No server type found. " \
+                                  "(This usually means the server type is AD)"
+            return {'version': "Supported LDAP Version: {}".format(version),
+                    'type': "LDAP Server Type: {}".format(server_type)}
         else:
             message = "Unable to find information in the LDAP server"
             LOG.debug(message)
@@ -277,7 +304,8 @@ class LDAPService(object):
 
         LOG.debug("Connection is open")
         search_filter = self._create_filter(['cn'], 1)
-        if self.conn.search(search_base=base_dn, search_filter=search_filter) is True and self.conn.entries:
+        if self.conn.search(search_base=base_dn, search_filter=search_filter) \
+                is True and self.conn.entries:
             LOG.debug("{} is a valid suffix (base DN)".format(base_dn))
             return True
         else:
@@ -298,7 +326,10 @@ class LDAPService(object):
 
         LOG.debug("Connection is open")
 
-        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter='(objectclass=*)', attributes=[ldap3.ALL_ATTRIBUTES], size_limit=1) is True and self.conn.entries:
+        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL,
+                            search_filter='(objectclass=*)',
+                            attributes=[ldap3.ALL_ATTRIBUTES],
+                            size_limit=1) is True and self.conn.entries:
             LOG.debug("{} is a valid DN".format(dn))
             ret_message = None
             if id_attribute in self.conn.entries[0]:
@@ -308,17 +339,22 @@ class LDAPService(object):
                 LOG.warning(message)
                 raise LDAPQueryException
             if name_attribute in self.conn.entries[0]:
-                LOG.debug("{} is a valid name attribute".format(name_attribute))
+                LOG.debug("{} is a valid name attribute".format(
+                    name_attribute))
             else:
-                message = "{} is an invalid name attribute".format(name_attribute)
+                message = "{} is an invalid name attribute".format(
+                    name_attribute)
                 LOG.warning(message)
                 if ret_message is None:
                     ret_message = message
                 else:
-                    ret_message = "{}, {} is an invalid name attribute".format(ret_message, name_attribute)
+                    ret_message = "{}, {} is an invalid name attribute".format(
+                        ret_message, name_attribute)
                 raise LDAPQueryException(ret_message)
             if ret_message is None:
-                ret_message = "{}, {}, and {} are valid".format(dn, id_attribute, name_attribute)
+                ret_message = "{}, {}, and {} are valid".format(dn,
+                                                                id_attribute,
+                                                                name_attribute)
                 return ret_message
         else:
             message = "{} is an invalid DN".format(dn)
@@ -337,7 +373,10 @@ class LDAPService(object):
 
         LOG.debug("Connection is open")
         search_filter = self._create_filter([id_attribute], 1)
-        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=['objectclass']) is True and self.conn.entries:
+        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL,
+                            search_filter=search_filter,
+                            attributes=['objectclass']) is True \
+                and self.conn.entries:
             objclasses_list = []
             for objclass_list in self.conn.entries:
                 for objclass in objclass_list.objectclass:
@@ -359,7 +398,8 @@ class LDAPService(object):
 
         LOG.debug("Connection is open")
         search_filter = '(objectclass=' + objectclass + ')'
-        if self.conn.search(search_base=dn, search_filter=search_filter, size_limit=1) is True and self.conn.entries:
+        if self.conn.search(search_base=dn, search_filter=search_filter,
+                            size_limit=1) is True and self.conn.entries:
             message = "{} is a valid objectclass".format(objectclass)
             LOG.debug(message)
             return message
@@ -368,7 +408,8 @@ class LDAPService(object):
             LOG.debug(message)
             raise LDAPQueryException(message)
 
-    def list_entries(self, dn, id_attribute, name_attribute, objectclass, limit):
+    def list_entries(self, dn, id_attribute, name_attribute, objectclass,
+                     limit):
         """
         Lists the entries, up to the limit.
         """
@@ -383,8 +424,12 @@ class LDAPService(object):
             LOG.debug("No limit entered, using 3 as default")
             limit = 3
         search_filter = self._create_filter([objectclass, id_attribute], 2)
-        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL, search_filter=search_filter, attributes=[name_attribute], size_limit=limit) is True and self.conn.entries:
-            LOG.debug("Found list of entries: {}".format(str(self.conn.entries)))
+        if self.conn.search(search_base=dn, search_scope=ldap3.LEVEL,
+                            search_filter=search_filter,
+                            attributes=[name_attribute],
+                            size_limit=limit) is True and self.conn.entries:
+            LOG.debug("Found list of entries: {}".format(
+                str(self.conn.entries)))
             return self.conn.entries
         else:
             message = "No entries found"
@@ -402,8 +447,11 @@ class LDAPService(object):
             raise LDAPConnectionClosedException(message)
 
         LOG.debug("Connection is open")
-        search_filter = self._create_filter([name_attribute, name, objectclass, id_attribute], 3)
-        if self.conn.search(search_base=dn, search_filter=search_filter, attributes=[id_attribute, name_attribute]) is True and self.conn.entries:
+        search_filter = self._create_filter([name_attribute, name, objectclass,
+                                             id_attribute], 3)
+        if self.conn.search(search_base=dn, search_filter=search_filter,
+                            attributes=[id_attribute, name_attribute]) is \
+                True and self.conn.entries:
             if len(self.conn.entries) > 1:
                 message = "Duplicate entries found for: {}".format(name)
                 LOG.warning(message)
@@ -434,7 +482,8 @@ class FileValidator(object):
             fp = open(self.path, 'r')
             return fp
         except IOError:
-            message = "Unable to open file: {} for reading".format(str(self.path))
+            message = "Unable to open file: {} for reading".format(
+                str(self.path))
             LOG.debug(message)
             raise IOError(message)
 
@@ -445,11 +494,13 @@ class HOSYamlDump(object):
             pass
 
         def _dict_representer(dumper, data):
-            return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items())
+            return dumper.represent_mapping(
+                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items())
 
         def _str_representer(dumper, data):
             if len(data.splitlines()) > 1:
-                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+                return dumper.represent_scalar('tag:yaml.org,2002:str', data,
+                                               style='|')
             return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
         OrderedDumper.add_representer(OrderedDict, _dict_representer)
@@ -461,7 +512,8 @@ class HOSYamlDump(object):
         Saves the passed in dictionary data to the specified file
         """
         if path is None:
-            return self._ordered_dump(data, path, Dumper=yaml.SafeDumper, default_flow_style=False)
+            return self._ordered_dump(data, path, Dumper=yaml.SafeDumper,
+                                      default_flow_style=False)
         LOG.info("Saving configuration options to file.")
         f = FileValidator(path)
         fp = f.validate_file_write()
@@ -473,12 +525,22 @@ class HOSYamlDump(object):
             cert_dict = {'cacert': cert}
             cert_fp.close()
         else:
-            cert_dict = {'cacert': """-----BEGIN CERTIFICATE-----\ncertificate appears here\n-----END CERTIFICATE-----"""}
+            cert_dict = {'cacert': "-----BEGIN CERTIFICATE-----\ncertificate"
+                                   " appears here\n-----END CERTIFICATE-----"}
 
-        LOG.debug("Dumping configuration options: {} to file: {}".format(str(data), path))
-        dmn_dict = OrderedDict([('name', name), ('description', "Dedicated domain for {} users".format(name))])
-        conf_dict = OrderedDict([('identity', OrderedDict([('driver', "ldap")])), ('ldap', data)])
-        od = OrderedDict([('keystone_domainldap_conf', OrderedDict([('cert_settings', cert_dict), ('domain_settings', dmn_dict), ('conf_settings', conf_dict)]))])
-        self._ordered_dump(od, fp, Dumper=yaml.SafeDumper, default_flow_style=False)
+        LOG.debug("Dumping configuration options: {} to file: {}".format(
+            str(data), path))
+        dm_dict = OrderedDict([('name', name),
+                               ('description',
+                                "Dedicated domain for {} users".format(name))])
+        conf_dict = OrderedDict([('identity',
+                                  OrderedDict([('driver', "ldap")])),
+                                 ('ldap', data)])
+        od = OrderedDict([('keystone_domainldap_conf',
+                           OrderedDict([('cert_settings', cert_dict),
+                                        ('domain_settings', dm_dict),
+                                        ('conf_settings', conf_dict)]))])
+        self._ordered_dump(od, fp, Dumper=yaml.SafeDumper,
+                           default_flow_style=False)
         fp.close()
         return "Data successfully dumped into {}".format(path)
