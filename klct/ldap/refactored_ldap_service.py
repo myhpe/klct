@@ -253,8 +253,8 @@ class LDAPService(object):
                         version_result[i + 1]))
                 LOG.debug("Found supported ldap versions: {}".format(version))
             except:
-                    LOG.warning("Unable to find supported ldap versions")
-                    version = "N/A"
+                LOG.warning("Unable to find supported ldap versions")
+                version = "N/A"
             try:
                 server_type = self.conn.response[0]['attributes']['structuralObjectClass']
                 LOG.debug("Found ldap server type: {}".format(server_type))
